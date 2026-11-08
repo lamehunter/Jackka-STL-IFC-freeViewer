@@ -1,0 +1,2022 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jackka STL &amp; IFC freeViewer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: drafting-table workspace — tool bar, model panel | framed 3D viewport | section panel, status line */
+:root{
+  --bg:#E6EAEC; --panel:#F6F8F9; --line:#CDD5DA; --ink:#162027; --muted:#5A6870;
+  --accent:#C4432A; --accent-soft:#F3DDD6; --sel:#2B78D0;
+  --view-top:#F5F7F8; --view-bot:#D6DDE1; --chip:#FFFFFFE6;
+  --f-ui:"Archivo",system-ui,"Segoe UI",sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101417; --panel:#171C20; --line:#2A3238; --ink:#DCE3E7; --muted:#8B98A0;
+  --accent:#EC6A4B; --accent-soft:#3A221C; --sel:#5AA2F0;
+  --view-top:#22292E; --view-bot:#0F1315; --chip:#171C20E6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101417; --panel:#171C20; --line:#2A3238; --ink:#DCE3E7; --muted:#8B98A0;
+  --accent:#EC6A4B; --accent-soft:#3A221C; --sel:#5AA2F0;
+  --view-top:#22292E; --view-bot:#0F1315; --chip:#171C20E6; color-scheme:dark}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--f-ui);overflow:hidden}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
+
+/* top bar */
+.bar{display:flex;align-items:center;gap:12px;padding-block:10px;flex-wrap:wrap;min-width:0}
+.brand{display:flex;align-items:center;gap:8px;min-width:0;margin-right:auto}
+.brand svg{color:var(--accent);flex:none}
+.brand b{font-weight:700;font-stretch:80%;font-size:18px;letter-spacing:.01em;white-space:nowrap}
+.brand b .sub{font-weight:500;font-stretch:85%;font-size:15px;color:var(--muted);margin-left:2px}
+@media (max-width:560px){.brand b .sub{display:none}}
+.file{font:12px var(--f-mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:34ch}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);font-size:13px;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.btn.cut{border-color:var(--accent);color:var(--accent)}
+.btn.cut[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.seg button{height:30px;padding:0 10px;border:0;background:none;font-size:13px;font-weight:500;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--bg)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.only-narrow{display:none}
+
+/* workspace */
+.work{display:grid;grid-template-columns:272px minmax(0,1fr) 296px;gap:12px;min-height:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:auto;min-height:0;min-width:0}
+.panel[hidden]{display:none!important}
+.work.no-left{grid-template-columns:minmax(0,1fr) 296px}
+.work.no-right{grid-template-columns:272px minmax(0,1fr)}
+.work.no-left.no-right{grid-template-columns:minmax(0,1fr)}
+.sec{padding:14px 14px 16px;border-bottom:1px solid var(--line);display:grid;gap:10px}
+.sec:last-child{border-bottom:0}
+.sec h2{margin:0;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sec h2 .act{font:500 12px var(--f-ui);letter-spacing:0;text-transform:none;color:var(--sel);background:none;border:0;padding:0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:13px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-family:var(--f-mono);font-size:12px;text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.list{display:grid;gap:1px}
+.row{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:4px;font-size:13px;min-width:0}
+.row:hover{background:var(--bg)}
+.row input[type=checkbox]{accent-color:var(--ink);margin:0;flex:none}
+.row .sw{width:10px;height:10px;border-radius:2px;flex:none;border:1px solid #0002}
+.row .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .ct{font:12px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.row .mini{border:1px solid var(--line);background:var(--panel);border-radius:4px;font-size:11px;padding:1px 6px;color:var(--accent);font-weight:600}
+.row .mini:hover{border-color:var(--accent)}
+.empty{color:var(--muted);font-size:13px;margin:0}
+.props details{border-top:1px solid var(--line);padding-top:6px}
+.props summary{font-size:12px;font-weight:600;cursor:pointer;padding:2px 0}
+.props .kv{margin-top:4px}
+.selhead{display:grid;gap:2px}
+.selhead strong{font-size:15px;font-weight:600;overflow-wrap:anywhere}
+.selhead span{font:12px var(--f-mono);color:var(--muted)}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap}
+.btnrow .btn{height:28px;padding:0 10px;font-size:12px}
+
+/* section panel */
+.lead{margin:0;font-size:13px;color:var(--muted);max-width:40ch}
+.addrow{display:grid;grid-template-columns:1fr auto auto auto;gap:6px}
+.addrow .btn{justify-content:center;padding:0 10px}
+.cutbtn{background:var(--accent);color:#fff;border-color:var(--accent)}
+.cutbtn:hover{border-color:var(--ink)}
+.cutbtn[aria-pressed="true"]{box-shadow:inset 0 0 0 2px #fff6}
+.plane{display:grid;gap:6px;padding:10px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
+.plane.off{opacity:.55}
+.plane-top{display:flex;align-items:center;gap:8px;min-width:0}
+.plane-top .tag{font:600 11px var(--f-mono);color:#fff;background:var(--accent);border-radius:3px;padding:1px 6px;flex:none}
+.plane-top .nm{flex:1;min-width:0;font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ico{width:26px;height:26px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:4px;background:var(--panel);padding:0;flex:none}
+.ico:hover{border-color:var(--muted)}
+.ico[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.slide{display:grid;grid-template-columns:1fr 7.5em;gap:8px;align-items:center}
+.slide input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+.num{width:100%;height:26px;border:1px solid var(--line);border-radius:4px;background:var(--panel);font:12px var(--f-mono);text-align:right;padding:0 6px;font-variant-numeric:tabular-nums}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:500}
+.switch{appearance:none;width:34px;height:20px;border-radius:10px;background:var(--line);position:relative;cursor:pointer;flex:none;margin:0;transition:background .15s}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--panel);transition:transform .15s}
+.switch:checked{background:var(--accent)} .switch:checked::after{transform:translateX(14px)}
+.dual{display:grid;grid-template-columns:1.2em 1fr;gap:8px;align-items:center}
+.dual .ax{font:600 12px var(--f-mono);color:var(--muted)}
+.dr{position:relative;height:22px;touch-action:none}
+.dr .tr{position:absolute;left:0;right:0;top:10px;height:3px;background:var(--line);border-radius:2px}
+.dr .fi{position:absolute;top:10px;height:3px;background:var(--accent);border-radius:2px}
+.dr .th{position:absolute;top:3px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--panel);border:2px solid var(--accent);padding:0}
+.dr .th:focus-visible{outline:2px solid var(--sel)}
+.drv{display:flex;justify-content:space-between;font:11px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums;grid-column:2}
+.legend{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.legend i{width:22px;height:12px;border-radius:2px;flex:none;background:repeating-linear-gradient(135deg,var(--accent) 0 3px,color-mix(in srgb,var(--accent) 78%,#000) 3px 6px)}
+
+/* viewport */
+.viewport{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(180deg,var(--view-top),var(--view-bot));min-height:0;min-width:0}
+canvas#cv{display:block;width:100%;height:100%;touch-action:none}
+.hint{position:absolute;left:12px;top:12px;max-width:calc(100% - 24px);background:var(--chip);border:1px solid var(--line);border-radius:var(--r);padding:6px 10px;font-size:12.5px;display:flex;gap:8px;align-items:center;backdrop-filter:blur(6px)}
+.hint.cutting{border-color:var(--accent);color:var(--accent);font-weight:500}
+.axes{position:absolute;right:12px;bottom:12px;pointer-events:none}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 75%,transparent);backdrop-filter:blur(2px);z-index:5}
+.drop{border:2px dashed var(--accent);border-radius:10px;padding:28px 36px;background:var(--panel);font-weight:600;text-align:center}
+.drop span{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:4px}
+.load{width:min(320px,80%);display:grid;gap:8px;font-size:13px}
+.bar-p{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.bar-p i{display:block;height:100%;width:0;background:var(--accent);transition:width .1s}
+
+/* status */
+.status{display:flex;gap:16px;align-items:center;padding-block:8px;font-size:12px;color:var(--muted);min-width:0}
+.status #status{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#coord{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.keys{white-space:nowrap}
+.keys kbd{font:11px var(--f-mono);border:1px solid var(--line);border-radius:3px;padding:0 4px;background:var(--panel);color:var(--ink)}
+
+@media (max-width: 900px){
+  .work,.work.no-left,.work.no-right{grid-template-columns:minmax(0,1fr)}
+  .panel{position:fixed;z-index:20;top:auto;bottom:max(12px,env(safe-area-inset-bottom,0px));max-height:62vh;width:min(340px,calc(100vw - 32px));box-shadow:0 12px 40px #0003}
+  .panel.left{left:max(16px,env(safe-area-inset-left,0px))}
+  .panel.right{right:max(16px,env(safe-area-inset-right,0px))}
+  .only-narrow{display:inline-flex}
+  .keys{display:none}
+  .file{max-width:18ch}
+}
+@media (max-width: 560px){ .seg button{padding:0 7px} .btn{padding:0 9px} .bar{gap:8px} }
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+<style>body{margin:0}</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg>
+      <b>Jackka <span class="sub">STL &amp; IFC freeViewer</span></b>
+      <span class="file" id="fileName">sample</span>
+    </div>
+    <div class="tools">
+      <label class="btn primary" for="fileIn">Open IFC / STL<input type="file" id="fileIn" accept=".ifc,.stl,.IFC,.STL" multiple hidden></label>
+      <div class="seg" role="group" aria-label="Views">
+        <button data-view="fit" title="Fit (F)">Fit</button>
+        <button data-view="top">Top</button>
+        <button data-view="front">Front</button>
+        <button data-view="right">Right</button>
+        <button data-view="iso">3D</button>
+      </div>
+      <button class="btn" id="edgesBtn" aria-pressed="false">Edges</button>
+      <button class="btn cut" id="scissorBtn" aria-pressed="false" title="Scissors (C): click a surface to cut there">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg>Scissors</button>
+      <div class="seg" role="group" aria-label="Panels">
+        <button id="tgLeft" aria-pressed="true">Model</button>
+        <button id="tgRight" aria-pressed="true">Section</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="work" id="work">
+    <aside class="panel left" id="leftPanel" aria-label="Model">
+      <section class="sec">
+        <h2>Model</h2>
+        <dl class="kv" id="modelInfo"></dl>
+      </section>
+      <section class="sec">
+        <h2><span id="groupsTitle">Classes</span><button class="act" id="showAll">Show all</button></h2>
+        <div class="list" id="groups"></div>
+      </section>
+      <section class="sec" id="storeySec">
+        <h2>Storeys</h2>
+        <div class="list" id="storeys"></div>
+      </section>
+      <section class="sec props" id="selSec">
+        <h2>Selection</h2>
+        <div id="selection"><p class="empty">Click an element in the view to see its properties.</p></div>
+      </section>
+    </aside>
+
+    <div class="viewport" id="vp">
+      <canvas id="cv"></canvas>
+      <div class="hint" id="hint">Drag to orbit · right-drag to pan · scroll to zoom · click to select</div>
+      <canvas class="axes" id="axes" width="72" height="72" style="width:72px;height:72px"></canvas>
+      <div class="overlay" id="dropOv" hidden><div class="drop">Drop to open<span>.ifc and .stl files</span></div></div>
+      <div class="overlay" id="loadOv" hidden><div class="load"><span id="loadMsg">Reading file…</span><div class="bar-p"><i id="loadBar"></i></div></div></div>
+    </div>
+
+    <aside class="panel right" id="rightPanel" aria-label="Section">
+      <section class="sec">
+        <h2>Section planes <button class="act" id="clearCuts">Clear all</button></h2>
+        <p class="lead">Turn on Scissors and click any surface to cut parallel to it, or add a plane on a model axis. Drag the red frame border, or the knobs on a section box, to move a cut.</p>
+        <div class="addrow">
+          <button class="btn cutbtn" id="scissorBtn2" aria-pressed="false">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg>Cut at surface</button>
+          <button class="btn" data-add="x" title="Add plane across X">X</button>
+          <button class="btn" data-add="y" title="Add plane across Y">Y</button>
+          <button class="btn" data-add="z" title="Add horizontal plane">Z</button>
+        </div>
+        <div class="list" id="planes" style="gap:8px"></div>
+      </section>
+      <section class="sec">
+        <label class="toggle" for="boxOn">Section box <input type="checkbox" class="switch" id="boxOn"></label>
+        <div id="boxCtl" hidden style="display:grid;gap:10px">
+          <div id="boxSliders" style="display:grid;gap:6px"></div>
+          <div class="btnrow">
+            <button class="btn" id="boxSel">Fit to selection</button>
+            <button class="btn" id="boxReset">Reset to model</button>
+          </div>
+        </div>
+      </section>
+      <section class="sec">
+        <h2>Cut faces</h2>
+        <div class="seg" role="group" aria-label="Cut face fill" id="fillSeg" style="width:max-content">
+          <button data-fill="2" aria-pressed="true">Hatched</button>
+          <button data-fill="1" aria-pressed="false">Solid</button>
+          <button data-fill="0" aria-pressed="false">Hollow</button>
+        </div>
+        <div class="legend"><i></i>Material sliced by a plane is filled so walls and slabs read as a section drawing.</div>
+        <label class="toggle" for="handlesOn">Show plane frames <input type="checkbox" class="switch" id="handlesOn" checked></label>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="status">
+    <span id="status">Loading sample…</span>
+    <span id="coord"></span>
+    <span class="keys"><kbd>F</kbd> fit <kbd>C</kbd> scissors <kbd>B</kbd> box <kbd>H</kbd> hide <kbd>I</kbd> isolate <kbd>Esc</kbd> clear</span>
+  </footer>
+</div>
+
+<script type="text/plain" id="sample-ifc">
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('ViewDefinition [ReferenceView]'),'2;1');
+FILE_NAME('sample-pavilion.ifc','2026-11-08T12:00:00',('Claude'),(''),'','','');
+FILE_SCHEMA(('IFC4'));
+ENDSEC;
+DATA;
+#1=IFCPROJECT('2Xs0000000000000000P01',$,'Sample pavilion',$,$,$,$,(#20),#10);
+#10=IFCUNITASSIGNMENT((#11,#12));
+#11=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);
+#12=IFCSIUNIT(*,.PLANEANGLEUNIT.,$,.RADIAN.);
+#20=IFCGEOMETRICREPRESENTATIONCONTEXT($,'Model',3,1.E-05,#21,$);
+#21=IFCAXIS2PLACEMENT3D(#22,$,$);
+#22=IFCCARTESIANPOINT((0.,0.,0.));
+#23=IFCGEOMETRICREPRESENTATIONSUBCONTEXT('Body','Model',*,*,*,*,#20,$,.MODEL_VIEW.,$);
+#40=IFCSITE('2Xs0000000000000000S01',$,'Site',$,$,#41,$,$,.ELEMENT.,$,$,$,$,$);
+#41=IFCLOCALPLACEMENT($,#21);
+#42=IFCBUILDING('2Xs0000000000000000B01',$,'Pavilion',$,$,#43,$,$,.ELEMENT.,$,$,$);
+#43=IFCLOCALPLACEMENT(#41,#21);
+#44=IFCBUILDINGSTOREY('2Xs0000000000000000F01',$,'Ground floor',$,$,#45,$,$,.ELEMENT.,0.);
+#45=IFCLOCALPLACEMENT(#43,#21);
+#46=IFCBUILDINGSTOREY('2Xs0000000000000000F02',$,'Roof',$,$,#47,$,$,.ELEMENT.,3200.);
+#47=IFCLOCALPLACEMENT(#43,#48);
+#48=IFCAXIS2PLACEMENT3D(#49,$,$);
+#49=IFCCARTESIANPOINT((0.,0.,3200.));
+#50=IFCRELAGGREGATES('2Xs0000000000000000A01',$,$,$,#1,(#40));
+#51=IFCRELAGGREGATES('2Xs0000000000000000A02',$,$,$,#40,(#42));
+#52=IFCRELAGGREGATES('2Xs0000000000000000A03',$,$,$,#42,(#44,#46));
+#101=IFCDIRECTION((0.0,0.0,1.0));
+#102=IFCDIRECTION((1.0,0.0,0.0));
+#103=IFCDIRECTION((0.0,1.0,0.0));
+#104=IFCCARTESIANPOINT((6000.0,3500.0));
+#105=IFCAXIS2PLACEMENT2D(#104,$);
+#106=IFCRECTANGLEPROFILEDEF(.AREA.,$,#105,12000.0,7000.0);
+#107=IFCCARTESIANPOINT((0.0,0.0,-250.0));
+#108=IFCAXIS2PLACEMENT3D(#107,$,$);
+#109=IFCEXTRUDEDAREASOLID(#106,#108,#101,250.0);
+#110=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#111=IFCAXIS2PLACEMENT3D(#110,$,$);
+#112=IFCLOCALPLACEMENT(#45,#111);
+#113=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#109));
+#114=IFCPRODUCTDEFINITIONSHAPE($,$,(#113));
+#115=IFCSLAB('2Xs0000000000000000001',$,'Ground slab',$,$,#112,#114,$,.FLOOR.);
+#116=IFCCARTESIANPOINT((6000.0,6875.0));
+#117=IFCAXIS2PLACEMENT2D(#116,$);
+#118=IFCRECTANGLEPROFILEDEF(.AREA.,$,#117,11500.0,250.0);
+#119=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#120=IFCAXIS2PLACEMENT3D(#119,$,$);
+#121=IFCEXTRUDEDAREASOLID(#118,#120,#101,3200.0);
+#122=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#123=IFCAXIS2PLACEMENT3D(#122,$,$);
+#124=IFCLOCALPLACEMENT(#45,#123);
+#125=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#121));
+#126=IFCPRODUCTDEFINITIONSHAPE($,$,(#125));
+#127=IFCWALL('2Xs0000000000000000002',$,'North wall',$,$,#124,#126,$,.STANDARD.);
+#128=IFCCARTESIANPOINT((2125.0,125.0));
+#129=IFCAXIS2PLACEMENT2D(#128,$);
+#130=IFCRECTANGLEPROFILEDEF(.AREA.,$,#129,3750.0,250.0);
+#131=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#132=IFCAXIS2PLACEMENT3D(#131,$,$);
+#133=IFCEXTRUDEDAREASOLID(#130,#132,#101,3200.0);
+#134=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#135=IFCAXIS2PLACEMENT3D(#134,$,$);
+#136=IFCLOCALPLACEMENT(#45,#135);
+#137=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#133));
+#138=IFCPRODUCTDEFINITIONSHAPE($,$,(#137));
+#139=IFCWALL('2Xs0000000000000000003',$,'South wall west',$,$,#136,#138,$,.STANDARD.);
+#140=IFCCARTESIANPOINT((9875.0,125.0));
+#141=IFCAXIS2PLACEMENT2D(#140,$);
+#142=IFCRECTANGLEPROFILEDEF(.AREA.,$,#141,3750.0,250.0);
+#143=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#144=IFCAXIS2PLACEMENT3D(#143,$,$);
+#145=IFCEXTRUDEDAREASOLID(#142,#144,#101,3200.0);
+#146=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#147=IFCAXIS2PLACEMENT3D(#146,$,$);
+#148=IFCLOCALPLACEMENT(#45,#147);
+#149=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#145));
+#150=IFCPRODUCTDEFINITIONSHAPE($,$,(#149));
+#151=IFCWALL('2Xs0000000000000000004',$,'South wall east',$,$,#148,#150,$,.STANDARD.);
+#152=IFCCARTESIANPOINT((8000.0,2225.0));
+#153=IFCAXIS2PLACEMENT2D(#152,$);
+#154=IFCRECTANGLEPROFILEDEF(.AREA.,$,#153,150.0,3950.0);
+#155=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#156=IFCAXIS2PLACEMENT3D(#155,$,$);
+#157=IFCEXTRUDEDAREASOLID(#154,#156,#101,3000.0);
+#158=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#159=IFCAXIS2PLACEMENT3D(#158,$,$);
+#160=IFCLOCALPLACEMENT(#45,#159);
+#161=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#157));
+#162=IFCPRODUCTDEFINITIONSHAPE($,$,(#161));
+#163=IFCWALL('2Xs0000000000000000005',$,'Partition',$,$,#160,#162,$,.STANDARD.);
+#164=IFCCARTESIANPOINT((0.0,0.0));
+#165=IFCCARTESIANPOINT((7000.0,0.0));
+#166=IFCCARTESIANPOINT((7000.0,3200.0));
+#167=IFCCARTESIANPOINT((3500.0,4300.0));
+#168=IFCCARTESIANPOINT((0.0,3200.0));
+#169=IFCCARTESIANPOINT((0.0,0.0));
+#170=IFCPOLYLINE((#164,#165,#166,#167,#168,#169));
+#171=IFCARBITRARYCLOSEDPROFILEDEF(.AREA.,'Gable',#170);
+#172=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#173=IFCAXIS2PLACEMENT3D(#172,#102,#103);
+#174=IFCEXTRUDEDAREASOLID(#171,#173,#101,250.);
+#175=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#176=IFCAXIS2PLACEMENT3D(#175,$,$);
+#177=IFCLOCALPLACEMENT(#45,#176);
+#178=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#174));
+#179=IFCPRODUCTDEFINITIONSHAPE($,$,(#178));
+#180=IFCWALL('2Xs0000000000000000006',$,'West gable wall',$,$,#177,#179,$,.STANDARD.);
+#181=IFCCARTESIANPOINT((0.0,0.0));
+#182=IFCCARTESIANPOINT((7000.0,0.0));
+#183=IFCCARTESIANPOINT((7000.0,3200.0));
+#184=IFCCARTESIANPOINT((3500.0,4300.0));
+#185=IFCCARTESIANPOINT((0.0,3200.0));
+#186=IFCCARTESIANPOINT((0.0,0.0));
+#187=IFCPOLYLINE((#181,#182,#183,#184,#185,#186));
+#188=IFCARBITRARYCLOSEDPROFILEDEF(.AREA.,'Gable',#187);
+#189=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#190=IFCAXIS2PLACEMENT3D(#189,#102,#103);
+#191=IFCEXTRUDEDAREASOLID(#188,#190,#101,250.);
+#192=IFCCARTESIANPOINT((11750.0,0.0,0.0));
+#193=IFCAXIS2PLACEMENT3D(#192,$,$);
+#194=IFCLOCALPLACEMENT(#45,#193);
+#195=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#191));
+#196=IFCPRODUCTDEFINITIONSHAPE($,$,(#195));
+#197=IFCWALL('2Xs0000000000000000007',$,'East gable wall',$,$,#194,#196,$,.STANDARD.);
+#198=IFCCARTESIANPOINTLIST3D(((4000.0,95.0,0.0),(8000.0,95.0,0.0),(8000.0,155.0,0.0),(4000.0,155.0,0.0),(4000.0,95.0,3200.0),(8000.0,95.0,3200.0),(8000.0,155.0,3200.0),(4000.0,155.0,3200.0)));
+#199=IFCTRIANGULATEDFACESET(#198,$,.T.,((1,3,2),(1,4,3),(5,6,7),(5,7,8),(1,2,6),(1,6,5),(2,3,7),(2,7,6),(3,4,8),(3,8,7),(4,1,5),(4,5,8)),$);
+#200=IFCSURFACESTYLERENDERING(#201,0.65,$,$,$,$,$,$,.NOTDEFINED.);
+#201=IFCCOLOURRGB($,0.55,0.75,0.85);
+#202=IFCSURFACESTYLE($,.BOTH.,(#200));
+#203=IFCSTYLEDITEM(#199,(#202),$);
+#204=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#205=IFCAXIS2PLACEMENT3D(#204,$,$);
+#206=IFCLOCALPLACEMENT(#45,#205);
+#207=IFCSHAPEREPRESENTATION(#23,'Body','Tessellation',(#199));
+#208=IFCPRODUCTDEFINITIONSHAPE($,$,(#207));
+#209=IFCWINDOW('2Xs0000000000000000008',$,'Glazed front',$,$,#206,#208,$,3200.,4000.,.WINDOW.,.NOTDEFINED.,$);
+#210=IFCCARTESIANPOINT((5333.0,125.0));
+#211=IFCAXIS2PLACEMENT2D(#210,$);
+#212=IFCRECTANGLEPROFILEDEF(.AREA.,$,#211,60.0,180.0);
+#213=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#214=IFCAXIS2PLACEMENT3D(#213,$,$);
+#215=IFCEXTRUDEDAREASOLID(#212,#214,#101,3200.0);
+#216=IFCSURFACESTYLERENDERING(#217,0.0,$,$,$,$,$,$,.NOTDEFINED.);
+#217=IFCCOLOURRGB($,0.22,0.24,0.26);
+#218=IFCSURFACESTYLE($,.BOTH.,(#216));
+#219=IFCSTYLEDITEM(#215,(#218),$);
+#220=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#221=IFCAXIS2PLACEMENT3D(#220,$,$);
+#222=IFCLOCALPLACEMENT(#45,#221);
+#223=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#215));
+#224=IFCPRODUCTDEFINITIONSHAPE($,$,(#223));
+#225=IFCMEMBER('2Xs0000000000000000009',$,'Mullion 1',$,$,#222,#224,$,.MULLION.);
+#226=IFCCARTESIANPOINT((6667.0,125.0));
+#227=IFCAXIS2PLACEMENT2D(#226,$);
+#228=IFCRECTANGLEPROFILEDEF(.AREA.,$,#227,60.0,180.0);
+#229=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#230=IFCAXIS2PLACEMENT3D(#229,$,$);
+#231=IFCEXTRUDEDAREASOLID(#228,#230,#101,3200.0);
+#232=IFCSURFACESTYLERENDERING(#233,0.0,$,$,$,$,$,$,.NOTDEFINED.);
+#233=IFCCOLOURRGB($,0.22,0.24,0.26);
+#234=IFCSURFACESTYLE($,.BOTH.,(#232));
+#235=IFCSTYLEDITEM(#231,(#234),$);
+#236=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#237=IFCAXIS2PLACEMENT3D(#236,$,$);
+#238=IFCLOCALPLACEMENT(#45,#237);
+#239=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#231));
+#240=IFCPRODUCTDEFINITIONSHAPE($,$,(#239));
+#241=IFCMEMBER('2Xs0000000000000000010',$,'Mullion 2',$,$,#238,#240,$,.MULLION.);
+#242=IFCCIRCLEPROFILEDEF(.AREA.,$,$,180.);
+#243=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#244=IFCAXIS2PLACEMENT3D(#243,$,$);
+#245=IFCEXTRUDEDAREASOLID(#242,#244,#101,2800.);
+#246=IFCCARTESIANPOINT((3000.0,3500.0,0.0));
+#247=IFCAXIS2PLACEMENT3D(#246,$,$);
+#248=IFCLOCALPLACEMENT(#45,#247);
+#249=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#245));
+#250=IFCPRODUCTDEFINITIONSHAPE($,$,(#249));
+#251=IFCCOLUMN('2Xs0000000000000000011',$,'Column C1',$,$,#248,#250,$,.COLUMN.);
+#252=IFCCIRCLEPROFILEDEF(.AREA.,$,$,180.);
+#253=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#254=IFCAXIS2PLACEMENT3D(#253,$,$);
+#255=IFCEXTRUDEDAREASOLID(#252,#254,#101,2800.);
+#256=IFCCARTESIANPOINT((6000.0,3500.0,0.0));
+#257=IFCAXIS2PLACEMENT3D(#256,$,$);
+#258=IFCLOCALPLACEMENT(#45,#257);
+#259=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#255));
+#260=IFCPRODUCTDEFINITIONSHAPE($,$,(#259));
+#261=IFCCOLUMN('2Xs0000000000000000012',$,'Column C2',$,$,#258,#260,$,.COLUMN.);
+#262=IFCISHAPEPROFILEDEF(.AREA.,'IPE 400',$,180.,400.,8.6,13.5,$,$,$);
+#263=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#264=IFCAXIS2PLACEMENT3D(#263,$,$);
+#265=IFCEXTRUDEDAREASOLID(#262,#264,#101,11500.);
+#266=IFCSURFACESTYLERENDERING(#267,0.0,$,$,$,$,$,$,.NOTDEFINED.);
+#267=IFCCOLOURRGB($,0.42,0.47,0.52);
+#268=IFCSURFACESTYLE($,.BOTH.,(#266));
+#269=IFCSTYLEDITEM(#265,(#268),$);
+#270=IFCCARTESIANPOINT((250.0,3500.0,3000.0));
+#271=IFCAXIS2PLACEMENT3D(#270,#102,#103);
+#272=IFCLOCALPLACEMENT(#45,#271);
+#273=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#265));
+#274=IFCPRODUCTDEFINITIONSHAPE($,$,(#273));
+#275=IFCBEAM('2Xs0000000000000000013',$,'Ridge beam',$,$,#272,#274,$,.BEAM.);
+#276=IFCCARTESIANPOINT((-300.0,-300.0,3200.0));
+#277=IFCCARTESIANPOINT((-300.0,3500.0,4400.0));
+#278=IFCCARTESIANPOINT((-300.0,7300.0,3200.0));
+#279=IFCCARTESIANPOINT((-300.0,7300.0,3420.0));
+#280=IFCCARTESIANPOINT((-300.0,3500.0,4620.0));
+#281=IFCCARTESIANPOINT((-300.0,-300.0,3420.0));
+#282=IFCCARTESIANPOINT((12300.0,-300.0,3200.0));
+#283=IFCCARTESIANPOINT((12300.0,3500.0,4400.0));
+#284=IFCCARTESIANPOINT((12300.0,7300.0,3200.0));
+#285=IFCCARTESIANPOINT((12300.0,7300.0,3420.0));
+#286=IFCCARTESIANPOINT((12300.0,3500.0,4620.0));
+#287=IFCCARTESIANPOINT((12300.0,-300.0,3420.0));
+#288=IFCPOLYLOOP((#281,#280,#279,#278,#277,#276));
+#289=IFCFACEOUTERBOUND(#288,.T.);
+#290=IFCFACE((#289));
+#291=IFCPOLYLOOP((#282,#283,#284,#285,#286,#287));
+#292=IFCFACEOUTERBOUND(#291,.T.);
+#293=IFCFACE((#292));
+#294=IFCPOLYLOOP((#276,#277,#283,#282));
+#295=IFCFACEOUTERBOUND(#294,.T.);
+#296=IFCFACE((#295));
+#297=IFCPOLYLOOP((#277,#278,#284,#283));
+#298=IFCFACEOUTERBOUND(#297,.T.);
+#299=IFCFACE((#298));
+#300=IFCPOLYLOOP((#278,#279,#285,#284));
+#301=IFCFACEOUTERBOUND(#300,.T.);
+#302=IFCFACE((#301));
+#303=IFCPOLYLOOP((#279,#280,#286,#285));
+#304=IFCFACEOUTERBOUND(#303,.T.);
+#305=IFCFACE((#304));
+#306=IFCPOLYLOOP((#280,#281,#287,#286));
+#307=IFCFACEOUTERBOUND(#306,.T.);
+#308=IFCFACE((#307));
+#309=IFCPOLYLOOP((#281,#276,#282,#287));
+#310=IFCFACEOUTERBOUND(#309,.T.);
+#311=IFCFACE((#310));
+#312=IFCCLOSEDSHELL((#290,#293,#296,#299,#302,#305,#308,#311));
+#313=IFCFACETEDBREP(#312);
+#314=IFCSURFACESTYLERENDERING(#315,0.0,$,$,$,$,$,$,.NOTDEFINED.);
+#315=IFCCOLOURRGB($,0.36,0.4,0.44);
+#316=IFCSURFACESTYLE($,.BOTH.,(#314));
+#317=IFCSTYLEDITEM(#313,(#316),$);
+#318=IFCCARTESIANPOINT((0.0,0.0,-3200.0));
+#319=IFCAXIS2PLACEMENT3D(#318,$,$);
+#320=IFCLOCALPLACEMENT(#47,#319);
+#321=IFCSHAPEREPRESENTATION(#23,'Body','Brep',(#313));
+#322=IFCPRODUCTDEFINITIONSHAPE($,$,(#321));
+#323=IFCROOF('2Xs0000000000000000014',$,'Roof',$,$,#320,#322,$,.GABLE_ROOF.);
+#324=IFCCARTESIANPOINT((0.0,0.0));
+#325=IFCAXIS2PLACEMENT2D(#324,$);
+#326=IFCRECTANGLEPROFILEDEF(.AREA.,$,#325,1600.0,800.0);
+#327=IFCCARTESIANPOINT((0.0,0.0,720.0));
+#328=IFCAXIS2PLACEMENT3D(#327,$,$);
+#329=IFCEXTRUDEDAREASOLID(#326,#328,#101,40.0);
+#330=IFCCARTESIANPOINT((-740.0,-340.0));
+#331=IFCAXIS2PLACEMENT2D(#330,$);
+#332=IFCRECTANGLEPROFILEDEF(.AREA.,$,#331,50.0,50.0);
+#333=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#334=IFCAXIS2PLACEMENT3D(#333,$,$);
+#335=IFCEXTRUDEDAREASOLID(#332,#334,#101,720.0);
+#336=IFCCARTESIANPOINT((-740.0,340.0));
+#337=IFCAXIS2PLACEMENT2D(#336,$);
+#338=IFCRECTANGLEPROFILEDEF(.AREA.,$,#337,50.0,50.0);
+#339=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#340=IFCAXIS2PLACEMENT3D(#339,$,$);
+#341=IFCEXTRUDEDAREASOLID(#338,#340,#101,720.0);
+#342=IFCCARTESIANPOINT((740.0,-340.0));
+#343=IFCAXIS2PLACEMENT2D(#342,$);
+#344=IFCRECTANGLEPROFILEDEF(.AREA.,$,#343,50.0,50.0);
+#345=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#346=IFCAXIS2PLACEMENT3D(#345,$,$);
+#347=IFCEXTRUDEDAREASOLID(#344,#346,#101,720.0);
+#348=IFCCARTESIANPOINT((740.0,340.0));
+#349=IFCAXIS2PLACEMENT2D(#348,$);
+#350=IFCRECTANGLEPROFILEDEF(.AREA.,$,#349,50.0,50.0);
+#351=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#352=IFCAXIS2PLACEMENT3D(#351,$,$);
+#353=IFCEXTRUDEDAREASOLID(#350,#352,#101,720.0);
+#354=IFCSURFACESTYLERENDERING(#355,0.0,$,$,$,$,$,$,.NOTDEFINED.);
+#355=IFCCOLOURRGB($,0.62,0.48,0.34);
+#356=IFCSURFACESTYLE($,.BOTH.,(#354));
+#357=IFCSTYLEDITEM(#329,(#356),$);
+#358=IFCSURFACESTYLERENDERING(#359,0.0,$,$,$,$,$,$,.NOTDEFINED.);
+#359=IFCCOLOURRGB($,0.25,0.25,0.25);
+#360=IFCSURFACESTYLE($,.BOTH.,(#358));
+#361=IFCSTYLEDITEM(#335,(#360),$);
+#362=IFCSURFACESTYLERENDERING(#363,0.0,$,$,$,$,$,$,.NOTDEFINED.);
+#363=IFCCOLOURRGB($,0.25,0.25,0.25);
+#364=IFCSURFACESTYLE($,.BOTH.,(#362));
+#365=IFCSTYLEDITEM(#341,(#364),$);
+#366=IFCSURFACESTYLERENDERING(#367,0.0,$,$,$,$,$,$,.NOTDEFINED.);
+#367=IFCCOLOURRGB($,0.25,0.25,0.25);
+#368=IFCSURFACESTYLE($,.BOTH.,(#366));
+#369=IFCSTYLEDITEM(#347,(#368),$);
+#370=IFCSURFACESTYLERENDERING(#371,0.0,$,$,$,$,$,$,.NOTDEFINED.);
+#371=IFCCOLOURRGB($,0.25,0.25,0.25);
+#372=IFCSURFACESTYLE($,.BOTH.,(#370));
+#373=IFCSTYLEDITEM(#353,(#372),$);
+#374=IFCSHAPEREPRESENTATION(#23,'Body','SweptSolid',(#329,#335,#341,#347,#353));
+#375=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#376=IFCAXIS2PLACEMENT3D(#375,$,$);
+#377=IFCREPRESENTATIONMAP(#376,#374);
+#378=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#379=IFCCARTESIANTRANSFORMATIONOPERATOR3D(#102,$,#378,1.,$);
+#380=IFCMAPPEDITEM(#377,#379);
+#381=IFCCARTESIANPOINT((2400.0,5200.0,0.0));
+#382=IFCAXIS2PLACEMENT3D(#381,$,$);
+#383=IFCLOCALPLACEMENT(#45,#382);
+#384=IFCSHAPEREPRESENTATION(#23,'Body','MappedRepresentation',(#380));
+#385=IFCPRODUCTDEFINITIONSHAPE($,$,(#384));
+#386=IFCFURNISHINGELEMENT('2Xs0000000000000000015',$,'Table 1',$,$,#383,#385,$);
+#387=IFCCARTESIANPOINT((0.0,0.0,0.0));
+#388=IFCCARTESIANTRANSFORMATIONOPERATOR3D(#103,$,#387,1.,$);
+#389=IFCMAPPEDITEM(#377,#388);
+#390=IFCCARTESIANPOINT((10000.0,2200.0,0.0));
+#391=IFCAXIS2PLACEMENT3D(#390,$,$);
+#392=IFCLOCALPLACEMENT(#45,#391);
+#393=IFCSHAPEREPRESENTATION(#23,'Body','MappedRepresentation',(#389));
+#394=IFCPRODUCTDEFINITIONSHAPE($,$,(#393));
+#395=IFCFURNISHINGELEMENT('2Xs0000000000000000016',$,'Table 2',$,$,#392,#394,$);
+#396=IFCRELCONTAINEDINSPATIALSTRUCTURE('2Xs0000000000000000017',$,$,$,(#115,#127,#139,#151,#163,#180,#197,#209,#225,#241,#251,#261,#275,#386,#395),#44);
+#397=IFCRELCONTAINEDINSPATIALSTRUCTURE('2Xs0000000000000000018',$,$,$,(#323),#46);
+#398=IFCPROPERTYSINGLEVALUE('IsExternal',$,IFCBOOLEAN(.T.),$);
+#399=IFCPROPERTYSINGLEVALUE('LoadBearing',$,IFCBOOLEAN(.T.),$);
+#400=IFCPROPERTYSINGLEVALUE('FireRating',$,IFCLABEL('EI 60'),$);
+#401=IFCPROPERTYSINGLEVALUE('ThermalTransmittance',$,IFCTHERMALTRANSMITTANCEMEASURE(0.18),$);
+#402=IFCPROPERTYSET('2Xs0000000000000000019',$,'Pset_WallCommon',$,(#398,#399,#400,#401));
+#403=IFCRELDEFINESBYPROPERTIES('2Xs0000000000000000020',$,$,$,(#127),#402);
+#404=IFCQUANTITYAREA('GrossArea',$,$,84.,$);
+#405=IFCQUANTITYVOLUME('GrossVolume',$,$,21.,$);
+#406=IFCQUANTITYLENGTH('Width',$,$,250.,$);
+#407=IFCELEMENTQUANTITY('2Xs0000000000000000021',$,'Qto_SlabBaseQuantities',$,$,(#404,#405,#406));
+#408=IFCRELDEFINESBYPROPERTIES('2Xs0000000000000000022',$,$,$,(#115),#407);
+ENDSEC;
+END-ISO-10303-21;
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/*IFC-START*/
+const IFCLoader = (() => {
+  class R { constructor(i) { this.i = i; } }
+  const isWS = c => c === 32 || c === 10 || c === 13 || c === 9;
+  const isId = c => (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c >= 48 && c <= 57) || c === 95;
+
+  function decode(s) {
+    if (s.indexOf('\\') < 0) return s;
+    return s
+      .replace(/\\X2\\([0-9A-F]+)\\X0\\/gi, (m, h) => { let o = ''; for (let i = 0; i + 3 < h.length; i += 4) o += String.fromCharCode(parseInt(h.substr(i, 4), 16)); return o; })
+      .replace(/\\X\\([0-9A-F]{2})/gi, (m, h) => String.fromCharCode(parseInt(h, 16)))
+      .replace(/\\S\\(.)/g, (m, c) => String.fromCharCode(c.charCodeAt(0) + 128))
+      .replace(/\\\\/g, '\\');
+  }
+
+  function parseArgs(s, p) {
+    const out = []; p++;
+    const n = s.length;
+    while (p < n) {
+      let c = s.charCodeAt(p);
+      while (isWS(c)) { p++; c = s.charCodeAt(p); }
+      if (c === 41) return [out, p + 1];
+      if (c === 44) { p++; continue; }
+      if (c === 40) { const r = parseArgs(s, p); out.push(r[0]); p = r[1]; continue; }
+      if (c === 35) { p++; let v = 0; c = s.charCodeAt(p); while (c >= 48 && c <= 57) { v = v * 10 + c - 48; p++; c = s.charCodeAt(p); } out.push(new R(v)); continue; }
+      if (c === 39) {
+        let q = p + 1, start = q, str = '';
+        for (;;) {
+          const k = s.indexOf("'", q);
+          if (k < 0) { q = n; break; }
+          if (s.charCodeAt(k + 1) === 39) { str += s.slice(start, k + 1); q = k + 2; start = q; continue; }
+          str += s.slice(start, k); q = k + 1; break;
+        }
+        out.push(decode(str)); p = q; continue;
+      }
+      if (c === 36 || c === 42) { out.push(null); p++; continue; }
+      if (c === 46) { const k = s.indexOf('.', p + 1); out.push({ e: s.slice(p + 1, k) }); p = k + 1; continue; }
+      if ((c >= 48 && c <= 57) || c === 45 || c === 43) {
+        let q = p + 1;
+        while (q < n) { const k = s.charCodeAt(q); if ((k >= 48 && k <= 57) || k === 46 || k === 69 || k === 101 || k === 45 || k === 43) q++; else break; }
+        out.push(parseFloat(s.slice(p, q))); p = q; continue;
+      }
+      if (c === 34) { const k = s.indexOf('"', p + 1); out.push(s.slice(p + 1, k)); p = k + 1; continue; }
+      let q = p;
+      while (q < n && isId(s.charCodeAt(q))) q++;
+      if (q === p) { p++; continue; }
+      const name = s.slice(p, q).toUpperCase();
+      while (q < n && s.charCodeAt(q) !== 40) q++;
+      const r = parseArgs(s, q);
+      out.push({ t: name, v: r[0].length === 1 ? r[0][0] : r[0] });
+      p = r[1];
+    }
+    return [out, p];
+  }
+
+  function index(s) {
+    const ents = new Map();
+    let p = s.search(/\bDATA\s*;/i); if (p < 0) p = 0;
+    const n = s.length;
+    while (p < n) {
+      const h = s.indexOf('#', p); if (h < 0) break;
+      let q = h + 1, id = 0, c = s.charCodeAt(q);
+      if (!(c >= 48 && c <= 57)) { p = q; continue; }
+      while (c >= 48 && c <= 57) { id = id * 10 + c - 48; q++; c = s.charCodeAt(q); }
+      while (isWS(c)) { q++; c = s.charCodeAt(q); }
+      if (c !== 61) { p = q; continue; }
+      q++; c = s.charCodeAt(q);
+      while (isWS(c)) { q++; c = s.charCodeAt(q); }
+      const t0 = q;
+      while (q < n && isId(c)) { q++; c = s.charCodeAt(q); }
+      const type = s.slice(t0, q).toUpperCase();
+      while (q < n && c !== 40) { q++; c = s.charCodeAt(q); }
+      const start = q; let depth = 0;
+      for (; q < n; q++) {
+        c = s.charCodeAt(q);
+        if (c === 39) { q++; while (q < n) { if (s.charCodeAt(q) === 39) { if (s.charCodeAt(q + 1) === 39) { q += 2; continue; } break; } q++; } continue; }
+        if (c === 40) depth++;
+        else if (c === 41) { if (--depth === 0) break; }
+      }
+      if (type) ents.set(id, { id, t: type, s: start, a: null });
+      p = q + 1;
+    }
+    return ents;
+  }
+
+  // ---------- math (column-major 4x4) ----------
+  const I = () => [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+  function mul(a, b) {
+    const o = new Array(16);
+    for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++)
+      o[c*4+r] = a[r]*b[c*4] + a[4+r]*b[c*4+1] + a[8+r]*b[c*4+2] + a[12+r]*b[c*4+3];
+    return o;
+  }
+  const mat = (x, y, z, o) => [x[0],x[1],x[2],0, y[0],y[1],y[2],0, z[0],z[1],z[2],0, o[0],o[1],o[2],1];
+  const ap = (m, p) => { const x = p[0], y = p[1], z = p[2] || 0; return [m[0]*x+m[4]*y+m[8]*z+m[12], m[1]*x+m[5]*y+m[9]*z+m[13], m[2]*x+m[6]*y+m[10]*z+m[14]]; };
+  const det = m => m[0]*(m[5]*m[10]-m[9]*m[6]) - m[4]*(m[1]*m[10]-m[9]*m[2]) + m[8]*(m[1]*m[6]-m[5]*m[2]);
+  function inv(m) { // affine inverse
+    const a=m[0],b=m[4],c=m[8],d=m[1],e=m[5],f=m[9],g=m[2],h=m[6],k=m[10];
+    const D = det(m) || 1;
+    const r = [(e*k-f*h)/D, -(d*k-f*g)/D, (d*h-e*g)/D, 0, -(b*k-c*h)/D, (a*k-c*g)/D, -(a*h-b*g)/D, 0, (b*f-c*e)/D, -(a*f-c*d)/D, (a*e-b*d)/D, 0, 0,0,0,1];
+    const t = ap(r, [m[12], m[13], m[14]]); r[12] = -t[0]; r[13] = -t[1]; r[14] = -t[2];
+    return r;
+  }
+  const sub = (a, b) => [a[0]-b[0], a[1]-b[1], (a[2]||0)-(b[2]||0)];
+  const dot = (a, b) => a[0]*b[0] + a[1]*b[1] + (a[2]||0)*(b[2]||0);
+  const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  const len = a => Math.hypot(a[0], a[1], a[2]||0);
+  const norm = a => { const l = len(a) || 1; return [a[0]/l, a[1]/l, (a[2]||0)/l]; };
+
+  const TYPE_COLORS = [
+    [/CURTAINWALL/, [0.60, 0.74, 0.82, 0.4]],
+    [/WALL/, [0.87, 0.85, 0.81, 1]],
+    [/SLAB|FOOTING/, [0.71, 0.72, 0.73, 1]],
+    [/ROOF/, [0.52, 0.38, 0.33, 1]],
+    [/WINDOW|PLATE/, [0.60, 0.74, 0.82, 0.4]],
+    [/DOOR/, [0.63, 0.49, 0.36, 1]],
+    [/COLUMN|BEAM|MEMBER|PILE/, [0.64, 0.67, 0.70, 1]],
+    [/STAIR|RAMP/, [0.80, 0.78, 0.74, 1]],
+    [/RAILING/, [0.36, 0.38, 0.41, 1]],
+    [/COVERING/, [0.91, 0.89, 0.85, 1]],
+    [/FURNI/, [0.72, 0.60, 0.47, 1]],
+    [/SPACE/, [0.45, 0.65, 0.85, 0.16]],
+    [/SITE|GEOGRAPHIC/, [0.62, 0.66, 0.52, 1]],
+    [/FLOW|DUCT|PIPE|DISTRIBUTION|TERMINAL|FITTING|ENERGY|CABLE/, [0.47, 0.62, 0.72, 1]],
+  ];
+  const typeColor = t => { for (const [re, c] of TYPE_COLORS) if (re.test(t)) return c; return [0.80, 0.80, 0.78, 1]; };
+
+  const GROUPS = [
+    [/^IFCWALL/, 'Walls'], [/^IFCCURTAINWALL/, 'Curtain walls'], [/^IFCSLAB/, 'Slabs'], [/^IFCROOF/, 'Roofs'],
+    [/^IFCWINDOW/, 'Windows'], [/^IFCDOOR/, 'Doors'], [/^IFCCOLUMN/, 'Columns'], [/^IFCBEAM/, 'Beams'],
+    [/^IFCMEMBER/, 'Members'], [/^IFCPLATE/, 'Plates'], [/^IFCSTAIR/, 'Stairs'], [/^IFCRAMP/, 'Ramps'],
+    [/^IFCRAILING/, 'Railings'], [/^IFCCOVERING/, 'Coverings'], [/^IFCFURNI/, 'Furniture'], [/^IFCSPACE/, 'Spaces'],
+    [/^IFCSITE/, 'Site'], [/^IFCFOOTING/, 'Footings'], [/^IFCPILE/, 'Piles'], [/^IFCBUILDINGELEMENTPROXY/, 'Proxies'],
+    [/^IFC(FLOW|DUCT|PIPE|DISTRIBUTION|AIRTERMINAL|CABLE|LIGHTFIXTURE|SANITARY)/, 'Services'],
+  ];
+  const groupOf = t => { for (const [re, g] of GROUPS) if (re.test(t)) return g; const s = t.replace(/^IFC/, '').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); };
+  const prettyClass = t => 'Ifc' + t.replace(/^IFC/, '').toLowerCase().replace(/^./, c => c.toUpperCase());
+
+  const SKIP_PARSE = new Set(('CARTESIANPOINT POLYLOOP FACE FACEOUTERBOUND FACEBOUND DIRECTION AXIS2PLACEMENT3D AXIS2PLACEMENT2D ' +
+    'LOCALPLACEMENT PROPERTYSINGLEVALUE SHAPEREPRESENTATION PRODUCTDEFINITIONSHAPE POLYLINE EXTRUDEDAREASOLID STYLEDITEM ' +
+    'PRESENTATIONSTYLEASSIGNMENT CLOSEDSHELL OPENSHELL FACETEDBREP RECTANGLEPROFILEDEF ARBITRARYCLOSEDPROFILEDEF CARTESIANPOINTLIST3D ' +
+    'CARTESIANPOINTLIST2D TRIANGULATEDFACESET INDEXEDPOLYGONALFACE POLYGONALFACESET QUANTITYLENGTH QUANTITYAREA QUANTITYVOLUME ' +
+    'QUANTITYCOUNT QUANTITYWEIGHT PROPERTYSET ELEMENTQUANTITY MAPPEDITEM CARTESIANTRANSFORMATIONOPERATOR3D REPRESENTATIONMAP ' +
+    'OWNERHISTORY COLOURRGB SURFACESTYLE SURFACESTYLERENDERING SURFACESTYLESHADING EDGECURVE ORIENTEDEDGE VERTEXPOINT EDGELOOP ' +
+    'ADVANCEDFACE PLANE INDEXEDPOLYCURVE BOOLEANCLIPPINGRESULT BOOLEANRESULT HALFSPACESOLID POLYGONALBOUNDEDHALFSPACE ' +
+    'RELDEFINESBYPROPERTIES RELASSOCIATESMATERIAL RELCONTAINEDINSPATIALSTRUCTURE RELAGGREGATES RELVOIDSELEMENT RELFILLSELEMENT ' +
+    'RELDEFINESBYTYPE RELCONNECTSPATHELEMENTS RELSPACEBOUNDARY MATERIAL MATERIALLAYER MATERIALLAYERSET MATERIALLAYERSETUSAGE ' +
+    'COMPOSITECURVESEGMENT TRIMMEDCURVE CIRCLE LINE VECTOR CIRCLEPROFILEDEF ISHAPEPROFILEDEF').split(' ').map(s => 'IFC' + s));
+  const NO_GEOM = new Set(['IFCOPENINGELEMENT','IFCOPENINGSTANDARDCASE','IFCVIRTUALELEMENT','IFCANNOTATION','IFCGRID','IFCSPATIALZONE','IFCALIGNMENT','IFCPROJECT']);
+
+  async function load(text, opts) {
+    const triangulate = opts.triangulate;
+    const progress = opts.progress || (() => {});
+    const ents = index(text);
+    const get = id => { const e = ents.get(id); if (!e) return null; if (e.a === null) e.a = parseArgs(text, e.s)[0]; return e; };
+    const ref = v => (v instanceof R ? get(v.i) : null);
+    const byType = new Map();
+    for (const e of ents.values()) { let l = byType.get(e.t); if (!l) byType.set(e.t, l = []); l.push(e.id); }
+    const all = t => (byType.get(t) || []).map(get);
+    const schema = (text.slice(0, 4000).match(/FILE_SCHEMA\s*\(\s*\(\s*'([^']+)'/i) || [])[1] || 'IFC';
+
+    // ---- units ----
+    const prefix = { EXA:1e18, PETA:1e15, TERA:1e12, GIGA:1e9, MEGA:1e6, KILO:1e3, HECTO:100, DECA:10, DECI:0.1, CENTI:0.01, MILLI:1e-3, MICRO:1e-6, NANO:1e-9 };
+    let lenScale = 1, angScale = 1, lenName = 'm';
+    const siFactor = u => (u && u.a[2] && prefix[u.a[2].e]) || 1;
+    for (const ua of all('IFCUNITASSIGNMENT').slice(0, 1)) {
+      for (const r of ua.a[0] || []) {
+        const u = ref(r); if (!u || !u.a[1]) continue;
+        const kind = u.a[1].e;
+        if (u.t === 'IFCSIUNIT') {
+          if (kind === 'LENGTHUNIT') { lenScale = siFactor(u); lenName = { 0.001: 'mm', 0.01: 'cm', 1: 'm' }[lenScale] || 'm'; }
+          if (kind === 'PLANEANGLEUNIT') angScale = 1;
+        } else if (u.t === 'IFCCONVERSIONBASEDUNIT') {
+          const mw = ref(u.a[3]); let f = 1;
+          if (mw) { const v = mw.a[0]; f = (v && typeof v === 'object' ? v.v : v) * siFactor(ref(mw.a[1])); }
+          if (kind === 'LENGTHUNIT') { lenScale = f || (/FOOT/i.test(u.a[2]) ? 0.3048 : /INCH/i.test(u.a[2]) ? 0.0254 : 1); lenName = String(u.a[2] || 'ft').toLowerCase(); }
+          if (kind === 'PLANEANGLEUNIT') angScale = f || Math.PI / 180;
+        }
+      }
+    }
+    const S = [lenScale,0,0,0, 0,lenScale,0,0, 0,0,lenScale,0, 0,0,0,1];
+
+    // ---- geometry primitives ----
+    const coords = e => { if (!e) return [0, 0, 0]; const c = e.a[0]; return [c[0] || 0, c[1] || 0, c[2] || 0]; };
+    const dirv = e => { if (!e) return null; const c = e.a[0]; return [c[0] || 0, c[1] || 0, c[2] || 0]; };
+    function place(e) {
+      if (!e) return I();
+      const a = e.a;
+      if (e.t === 'IFCAXIS2PLACEMENT2D') {
+        const o = coords(ref(a[0])); let x = a[1] ? norm(dirv(ref(a[1]))) : [1, 0, 0];
+        return mat([x[0], x[1], 0], [-x[1], x[0], 0], [0, 0, 1], [o[0], o[1], 0]);
+      }
+      if (e.t === 'IFCAXIS1PLACEMENT') return mat([1,0,0],[0,1,0],[0,0,1], coords(ref(a[0])));
+      const o = coords(ref(a[0]));
+      const z = a[1] ? norm(dirv(ref(a[1]))) : [0, 0, 1];
+      let xr = a[2] ? dirv(ref(a[2])) : (Math.abs(z[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0]);
+      let x = sub(xr, z.map(v => v * dot(xr, z)));
+      if (len(x) < 1e-9) x = Math.abs(z[0]) < 0.9 ? cross([0, 1, 0], z) : cross(z, [1, 0, 0]);
+      x = norm(x);
+      return mat(x, cross(z, x), z, o);
+    }
+    const lpCache = new Map();
+    function lp(e) {
+      if (!e) return I();
+      if (lpCache.has(e.id)) return lpCache.get(e.id);
+      let m = I();
+      if (e.t === 'IFCLOCALPLACEMENT') m = mul(e.a[0] ? lp(ref(e.a[0])) : I(), place(ref(e.a[1])));
+      lpCache.set(e.id, m);
+      return m;
+    }
+    function xformOp(e) {
+      if (!e) return I();
+      const a = e.a; const o = coords(ref(a[2])); const s = typeof a[3] === 'number' ? a[3] : 1;
+      if (e.t.indexOf('2D') >= 0) {
+        const x = a[0] ? norm(dirv(ref(a[0]))) : [1, 0, 0];
+        let y = [-x[1], x[0], 0];
+        if (a[1]) { const y0 = dirv(ref(a[1])); if (dot(y0, y) < 0) y = [-y[0], -y[1], 0]; }
+        const s2 = e.t.includes('NONUNIFORM') && typeof a[4] === 'number' ? a[4] : s;
+        return mat([x[0]*s, x[1]*s, 0], [y[0]*s2, y[1]*s2, 0], [0, 0, 1], [o[0], o[1], 0]);
+      }
+      const z = a[4] ? norm(dirv(ref(a[4]))) : [0, 0, 1];
+      let x = a[0] ? norm(dirv(ref(a[0]))) : (Math.abs(z[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0]);
+      x = sub(x, z.map(v => v * dot(x, z)));
+      if (len(x) < 1e-9) x = Math.abs(z[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+      x = norm(x);
+      let y = cross(z, x);
+      if (a[1]) { const y0 = dirv(ref(a[1])); if (dot(y0, y) < 0) y = y.map(v => -v); }
+      const nu = e.t.includes('NONUNIFORM');
+      const s2 = nu && typeof a[5] === 'number' ? a[5] : s, s3 = nu && typeof a[6] === 'number' ? a[6] : s;
+      return mat(x.map(v => v * s), y.map(v => v * s2), z.map(v => v * s3), o);
+    }
+
+    // ---- curves ----
+    const seg = ang => Math.max(3, Math.ceil(Math.abs(ang) / (Math.PI / 18)));
+    function arcPts(cx, cy, r, rx, ry, a0, a1, out, m) {
+      const n = seg(a1 - a0);
+      for (let i = 0; i <= n; i++) { const t = a0 + (a1 - a0) * i / n; out.push(ap(m, [cx + r * rx * Math.cos(t), cy + r * ry * Math.sin(t), 0])); }
+    }
+    function arc3(p1, p2, p3, out) {
+      const ax = p1[0], ay = p1[1], bx = p2[0], by = p2[1], cx = p3[0], cy = p3[1];
+      const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+      if (Math.abs(d) < 1e-12) { out.push(p1, p2, p3); return; }
+      const ux = ((ax*ax + ay*ay) * (by - cy) + (bx*bx + by*by) * (cy - ay) + (cx*cx + cy*cy) * (ay - by)) / d;
+      const uy = ((ax*ax + ay*ay) * (cx - bx) + (bx*bx + by*by) * (ax - cx) + (cx*cx + cy*cy) * (bx - ax)) / d;
+      const r = Math.hypot(ax - ux, ay - uy);
+      let a1 = Math.atan2(ay - uy, ax - ux), a2 = Math.atan2(by - uy, bx - ux), a3 = Math.atan2(cy - uy, cx - ux);
+      const ccw = ((bx - ax) * (cy - ay) - (by - ay) * (cx - ax)) > 0;
+      if (ccw) { while (a3 < a1) a3 += 2 * Math.PI; } else { while (a3 > a1) a3 -= 2 * Math.PI; }
+      const n = seg(a3 - a1);
+      for (let i = 0; i <= n; i++) { const t = a1 + (a3 - a1) * i / n; out.push([ux + r * Math.cos(t), uy + r * Math.sin(t), 0]); }
+    }
+    function trimParam(tr, basis, isLine, m, mi) {
+      for (const v of tr || []) if (v instanceof R) { const p = ap(mi, coords(get(v.i))); return isLine ? { pt: coords(get(v.i)) } : { ang: Math.atan2(p[1] / (basis.ry || 1), p[0] / (basis.rx || 1)) }; }
+      for (const v of tr || []) if (v && typeof v === 'object' && v.t === 'IFCPARAMETERVALUE') return isLine ? { t: v.v } : { ang: v.v * angScale };
+      return null;
+    }
+    function curve(e) {
+      if (!e) return [];
+      const a = e.a;
+      switch (e.t) {
+        case 'IFCPOLYLINE': return a[0].map(r => coords(ref(r)));
+        case 'IFCINDEXEDPOLYCURVE': {
+          const P = (ref(a[0]) || { a: [[]] }).a[0].map(c => [c[0], c[1], c[2] || 0]);
+          if (!a[1]) return P.slice();
+          const out = [];
+          for (const sg of a[1]) {
+            const idx = Array.isArray(sg.v) ? sg.v : [sg.v];
+            if (sg.t === 'IFCARCINDEX' && idx.length === 3) arc3(P[idx[0]-1], P[idx[1]-1], P[idx[2]-1], out);
+            else for (const i of idx) out.push(P[i - 1]);
+          }
+          return out;
+        }
+        case 'IFCCOMPOSITECURVE': case 'IFCCOMPOSITECURVEONSURFACE': {
+          const out = [];
+          for (const s of a[0]) {
+            const se = ref(s); if (!se) continue;
+            let pts = curve(ref(se.a[2]));
+            if (se.a[1] && se.a[1].e === 'F') pts = pts.slice().reverse();
+            out.push(...pts);
+          }
+          return out;
+        }
+        case 'IFCCIRCLE': case 'IFCELLIPSE': {
+          const m = place(ref(a[0])); const out = [];
+          const rx = a[1], ry = e.t === 'IFCELLIPSE' ? a[2] : a[1];
+          arcPts(0, 0, 1, rx, ry, 0, 2 * Math.PI, out, m); out.pop();
+          return out;
+        }
+        case 'IFCTRIMMEDCURVE': {
+          const b = ref(a[0]); if (!b) return [];
+          const sense = !(a[3] && a[3].e === 'F');
+          if (b.t === 'IFCLINE') {
+            const P = coords(ref(b.a[0])); const vec = ref(b.a[1]); const d = vec ? dirv(ref(vec.a[0])).map(v => v * (vec.a[1] || 1)) : [1, 0, 0];
+            const res = tr => { const t = trimParam(tr, {}, true, null, null); if (!t) return P; return t.pt || [P[0] + d[0] * t.t, P[1] + d[1] * t.t, P[2] + d[2] * t.t]; };
+            return [res(a[1]), res(a[2])];
+          }
+          if (b.t === 'IFCCIRCLE' || b.t === 'IFCELLIPSE') {
+            const m = place(ref(b.a[0])), mi = inv(m);
+            const rx = b.a[1], ry = b.t === 'IFCELLIPSE' ? b.a[2] : b.a[1];
+            const t1 = trimParam(a[1], { rx, ry }, false, m, mi), t2 = trimParam(a[2], { rx, ry }, false, m, mi);
+            let a0 = t1 ? t1.ang : 0, a1 = t2 ? t2.ang : 2 * Math.PI;
+            if (sense) { while (a1 <= a0) a1 += 2 * Math.PI; } else { while (a1 >= a0) a1 -= 2 * Math.PI; }
+            const out = []; arcPts(0, 0, 1, rx, ry, a0, a1, out, m); return out;
+          }
+          return curve(b);
+        }
+        default: return [];
+      }
+    }
+
+    // ---- profiles -> [{outer, holes}] ----
+    const area2 = L => { let s = 0; for (let i = 0, n = L.length; i < n; i++) { const p = L[i], q = L[(i + 1) % n]; s += p[0] * q[1] - q[0] * p[1]; } return s / 2; };
+    function clean2(pts) {
+      const out = [];
+      for (const p of pts) { if (!p) continue; const q = out[out.length - 1]; if (!q || Math.abs(q[0] - p[0]) + Math.abs(q[1] - p[1]) > 1e-9) out.push([p[0], p[1]]); }
+      while (out.length > 2 && Math.abs(out[0][0] - out[out.length-1][0]) + Math.abs(out[0][1] - out[out.length-1][1]) < 1e-9) out.pop();
+      return out.length >= 3 ? out : null;
+    }
+    const circ = (r, rx = r, ry = r, n = 32) => Array.from({ length: n }, (_, i) => [rx * Math.cos(i / n * 2 * Math.PI), ry * Math.sin(i / n * 2 * Math.PI)]);
+    const rect = (w, h) => [[-w/2, -h/2], [w/2, -h/2], [w/2, h/2], [-w/2, h/2]];
+    function profile(e) {
+      if (!e) return [];
+      const a = e.a; let pos = null, outer = null, holes = [];
+      switch (e.t) {
+        case 'IFCRECTANGLEPROFILEDEF': case 'IFCROUNDEDRECTANGLEPROFILEDEF': pos = a[2]; outer = rect(a[3], a[4]); break;
+        case 'IFCRECTANGLEHOLLOWPROFILEDEF': pos = a[2]; outer = rect(a[3], a[4]); holes = [rect(a[3] - 2 * a[5], a[4] - 2 * a[5])]; break;
+        case 'IFCCIRCLEPROFILEDEF': pos = a[2]; outer = circ(a[3]); break;
+        case 'IFCCIRCLEHOLLOWPROFILEDEF': pos = a[2]; outer = circ(a[3]); holes = [circ(a[3] - a[4])]; break;
+        case 'IFCELLIPSEPROFILEDEF': pos = a[2]; outer = circ(0, a[3], a[4]); break;
+        case 'IFCISHAPEPROFILEDEF': case 'IFCASYMMETRICISHAPEPROFILEDEF': {
+          pos = a[2]; const b = a[3], d = a[4], tw = a[5], tf = a[6];
+          outer = [[-b/2,-d/2],[b/2,-d/2],[b/2,-d/2+tf],[tw/2,-d/2+tf],[tw/2,d/2-tf],[b/2,d/2-tf],[b/2,d/2],[-b/2,d/2],[-b/2,d/2-tf],[-tw/2,d/2-tf],[-tw/2,-d/2+tf],[-b/2,-d/2+tf]]; break;
+        }
+        case 'IFCLSHAPEPROFILEDEF': {
+          pos = a[2]; const d = a[3], w = a[4] || a[3], t = a[5];
+          outer = [[-w/2,-d/2],[w/2,-d/2],[w/2,-d/2+t],[-w/2+t,-d/2+t],[-w/2+t,d/2],[-w/2,d/2]]; break;
+        }
+        case 'IFCTSHAPEPROFILEDEF': {
+          pos = a[2]; const d = a[3], fw = a[4], tw = a[5], tf = a[6];
+          outer = [[-tw/2,-d/2],[tw/2,-d/2],[tw/2,d/2-tf],[fw/2,d/2-tf],[fw/2,d/2],[-fw/2,d/2],[-fw/2,d/2-tf],[-tw/2,d/2-tf]]; break;
+        }
+        case 'IFCUSHAPEPROFILEDEF': case 'IFCCSHAPEPROFILEDEF': {
+          pos = a[2]; const d = a[3], fw = a[4], tw = a[5], tf = e.t === 'IFCCSHAPEPROFILEDEF' ? a[5] : a[6];
+          outer = [[-fw/2,-d/2],[fw/2,-d/2],[fw/2,-d/2+tf],[-fw/2+tw,-d/2+tf],[-fw/2+tw,d/2-tf],[fw/2,d/2-tf],[fw/2,d/2],[-fw/2,d/2]]; break;
+        }
+        case 'IFCZSHAPEPROFILEDEF': {
+          pos = a[2]; const d = a[3], fw = a[4], tw = a[5], tf = a[6];
+          outer = [[-tw/2,-d/2],[fw-tw/2,-d/2],[fw-tw/2,-d/2+tf],[tw/2,-d/2+tf],[tw/2,d/2],[-fw+tw/2,d/2],[-fw+tw/2,d/2-tf],[-tw/2,d/2-tf]]; break;
+        }
+        case 'IFCARBITRARYCLOSEDPROFILEDEF': outer = curve(ref(a[2])); break;
+        case 'IFCARBITRARYPROFILEDEFWITHVOIDS': outer = curve(ref(a[2])); holes = (a[3] || []).map(r => curve(ref(r))); break;
+        case 'IFCDERIVEDPROFILEDEF': {
+          const m = xformOp(ref(a[3]));
+          return profile(ref(a[2])).map(p => ({ outer: p.outer.map(q => ap(m, q)), holes: p.holes.map(h => h.map(q => ap(m, q))) })).map(fix).filter(Boolean);
+        }
+        case 'IFCCOMPOSITEPROFILEDEF': return (a[2] || []).flatMap(r => profile(ref(r)));
+        default: return [];
+      }
+      if (pos instanceof R) { const m = place(get(pos.i)); outer = outer.map(p => ap(m, p)); holes = holes.map(h => h.map(p => ap(m, p))); }
+      const f = fix({ outer, holes });
+      return f ? [f] : [];
+    }
+    function fix(p) {
+      const o = clean2(p.outer); if (!o) return null;
+      if (area2(o) < 0) o.reverse();
+      const hs = [];
+      for (const h of p.holes) { const c = clean2(h); if (!c) continue; if (area2(c) > 0) c.reverse(); hs.push(c); }
+      return { outer: o, holes: hs };
+    }
+
+    // ---- triangle builders ----
+    const tri = (T, M, a, b, c) => { const p = ap(M, a), q = ap(M, b), r = ap(M, c); T.push(p[0], p[1], p[2], q[0], q[1], q[2], r[0], r[1], r[2]); };
+    function capTris(pr) {
+      const flat = [pr.outer, ...pr.holes].flat();
+      const res = [];
+      let tris = [];
+      try { tris = triangulate(pr.outer, pr.holes); } catch (err) { tris = []; }
+      for (const t of tris) {
+        const A = flat[t[0]], B = flat[t[1]], C = flat[t[2]];
+        if (!A || !B || !C) continue;
+        const ar = (B[0]-A[0]) * (C[1]-A[1]) - (B[1]-A[1]) * (C[0]-A[0]);
+        res.push(ar < 0 ? [A, C, B] : [A, B, C]);
+      }
+      return res;
+    }
+    function extrude(pr, dir, depth, M, T) {
+      const dx = dir[0] * depth, dy = dir[1] * depth, dz = dir[2] * depth;
+      for (const [A, B, C] of capTris(pr)) {
+        tri(T, M, [A[0], A[1], 0], [C[0], C[1], 0], [B[0], B[1], 0]);
+        tri(T, M, [A[0]+dx, A[1]+dy, dz], [B[0]+dx, B[1]+dy, dz], [C[0]+dx, C[1]+dy, dz]);
+      }
+      for (const L of [pr.outer, ...pr.holes]) for (let i = 0; i < L.length; i++) {
+        const A = L[i], B = L[(i + 1) % L.length];
+        const a0 = [A[0], A[1], 0], b0 = [B[0], B[1], 0], a1 = [A[0]+dx, A[1]+dy, dz], b1 = [B[0]+dx, B[1]+dy, dz];
+        tri(T, M, a0, b0, b1); tri(T, M, a0, b1, a1);
+      }
+    }
+    function revolve(pr, axP, axD, angle, M, T) {
+      const k = norm(axD);
+      const rot = (p, th) => {
+        const v = sub(p, axP), c = Math.cos(th), s = Math.sin(th), kv = cross(k, v), kd = dot(k, v);
+        return [axP[0] + v[0]*c + kv[0]*s + k[0]*kd*(1-c), axP[1] + v[1]*c + kv[1]*s + k[1]*kd*(1-c), axP[2] + v[2]*c + kv[2]*s + k[2]*kd*(1-c)];
+      };
+      const n = seg(angle);
+      for (const L of [pr.outer, ...pr.holes]) {
+        const rings = []; for (let i = 0; i <= n; i++) rings.push(L.map(p => rot([p[0], p[1], 0], angle * i / n)));
+        for (let i = 0; i < n; i++) for (let j = 0; j < L.length; j++) {
+          const j2 = (j + 1) % L.length;
+          tri(T, M, rings[i][j], rings[i][j2], rings[i+1][j2]); tri(T, M, rings[i][j], rings[i+1][j2], rings[i+1][j]);
+        }
+      }
+      if (Math.abs(angle) < 2 * Math.PI - 1e-6) for (const [A, B, C] of capTris(pr)) {
+        tri(T, M, [A[0], A[1], 0], [C[0], C[1], 0], [B[0], B[1], 0]);
+        tri(T, M, rot([A[0], A[1], 0], angle), rot([B[0], B[1], 0], angle), rot([C[0], C[1], 0], angle));
+      }
+    }
+    function tube(pts, r, M, out) {
+      for (let i = 0; i + 1 < pts.length; i++) {
+        const p = pts[i], q = pts[i + 1]; const d = sub(q, p); if (len(d) < 1e-9) continue;
+        const pr = { outer: circ(r, r, r, 12), holes: [] };
+        const z = norm(d); const xr = Math.abs(z[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+        const x = norm(cross(xr, z)); const m = mul(M, mat(x, cross(z, x), z, p));
+        const T = []; extrude(pr, [0, 0, 1], len(d), m, T); emit(T, true, out);
+      }
+    }
+    function polyFace(outer, holes, M, T) {
+      outer = outer.filter(Boolean);
+      if (outer.length < 3) return;
+      if (!holes.length && outer.length === 3) { tri(T, M, outer[0], outer[1], outer[2]); return; }
+      let n = [0, 0, 0];
+      for (let i = 0; i < outer.length; i++) { const p = outer[i], q = outer[(i + 1) % outer.length];
+        n[0] += (p[1] - q[1]) * (p[2] + q[2]); n[1] += (p[2] - q[2]) * (p[0] + q[0]); n[2] += (p[0] - q[0]) * (p[1] + q[1]); }
+      if (len(n) < 1e-14) return;
+      n = norm(n);
+      const ax = Math.abs(n[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+      const u = norm(cross(n, ax)), v = cross(n, u);
+      const pj = p => [dot(p, u), dot(p, v), p];
+      const o2 = dedup(outer.map(pj)); const h2 = holes.map(h => dedup(h.filter(Boolean).map(pj))).filter(h => h.length >= 3);
+      if (o2.length < 3) return;
+      if (area2(o2) < 0) o2.reverse();
+      for (const h of h2) if (area2(h) > 0) h.reverse();
+      let tris = capTris({ outer: o2, holes: h2 });
+      if (!tris.length) for (let i = 1; i + 1 < o2.length; i++) tris.push([o2[0], o2[i], o2[i + 1]]);
+      for (const [A, B, C] of tris) tri(T, M, A[2], B[2], C[2]);
+    }
+    function dedup(L) {
+      const out = [];
+      for (const p of L) { const q = out[out.length - 1]; if (!q || Math.abs(q[0] - p[0]) + Math.abs(q[1] - p[1]) > 1e-9) out.push(p); }
+      while (out.length > 2 && Math.abs(out[0][0] - out[out.length - 1][0]) + Math.abs(out[0][1] - out[out.length - 1][1]) < 1e-9) out.pop();
+      return out;
+    }
+    function loopPts(e) {
+      if (!e) return [];
+      if (e.t === 'IFCPOLYLOOP') return e.a[0].map(r => coords(ref(r)));
+      if (e.t === 'IFCEDGELOOP') {
+        const out = [];
+        for (const r of e.a[0]) {
+          const o = ref(r); if (!o) continue; const ed = ref(o.a[2]); if (!ed) continue;
+          const fwd = !(o.a[3] && o.a[3].e === 'F');
+          const vp = ref(fwd ? ed.a[0] : ed.a[1]); if (vp) out.push(coords(ref(vp.a[0])));
+        }
+        return out;
+      }
+      return [];
+    }
+    function faceEnt(f, M, T) {
+      if (!f) return;
+      let outer = null; const holes = [];
+      const rev = f.t === 'IFCADVANCEDFACE' && f.a[2] && f.a[2].e === 'F';
+      for (const br of f.a[0] || []) {
+        const b = ref(br); if (!b) continue;
+        let pts = loopPts(ref(b.a[0]));
+        if ((b.a[1] && b.a[1].e === 'F') !== rev) pts = pts.slice().reverse();
+        if (b.t === 'IFCFACEOUTERBOUND' && !outer) outer = pts; else holes.push(pts);
+      }
+      if (!outer) outer = holes.shift();
+      if (outer) polyFace(outer, holes, M, T);
+    }
+    const shellFaces = (sh, M, T) => { if (sh) for (const f of sh.a[0] || []) faceEnt(ref(f), M, T); };
+    function emit(T, solid, out, M) {
+      let flip = false;
+      if (solid) {
+        let v = 0;
+        const ox = T[0], oy = T[1], oz = T[2];
+        for (let i = 0; i < T.length; i += 9) {
+          const ax = T[i]-ox, ay = T[i+1]-oy, az = T[i+2]-oz, bx = T[i+3]-ox, by = T[i+4]-oy, bz = T[i+5]-oz, cx = T[i+6]-ox, cy = T[i+7]-oy, cz = T[i+8]-oz;
+          v += ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx);
+        }
+        flip = v < 0;
+      } else if (M && det(M) < 0) flip = true;
+      for (let i = 0; i < T.length; i += 9) {
+        if (flip) out.push(T[i], T[i+1], T[i+2], T[i+6], T[i+7], T[i+8], T[i+3], T[i+4], T[i+5]);
+        else for (let j = 0; j < 9; j++) out.push(T[i + j]);
+      }
+    }
+
+    // ---- styles & materials ----
+    function styleColor(st) {
+      if (!st) return null;
+      if (st.t === 'IFCPRESENTATIONSTYLEASSIGNMENT') { for (const r of st.a[0] || []) { const c = styleColor(ref(r)); if (c) return c; } return null; }
+      if (st.t === 'IFCSURFACESTYLE') {
+        for (const r of st.a[2] || []) {
+          const s = ref(r); if (!s) continue;
+          if (s.t === 'IFCSURFACESTYLERENDERING' || s.t === 'IFCSURFACESTYLESHADING') {
+            const c = ref(s.a[0]); if (!c) continue;
+            const tr = typeof s.a[1] === 'number' ? s.a[1] : 0;
+            return [c.a[1], c.a[2], c.a[3], Math.max(0.12, 1 - tr)];
+          }
+        }
+      }
+      return null;
+    }
+    const itemStyle = new Map();
+    for (const si of all('IFCSTYLEDITEM')) {
+      if (!(si.a[0] instanceof R)) continue;
+      for (const r of si.a[1] || []) { const c = styleColor(ref(r)); if (c) { itemStyle.set(si.a[0].i, c); break; } }
+    }
+    const matColor = new Map();
+    for (const md of all('IFCMATERIALDEFINITIONREPRESENTATION')) {
+      const m = md.a[3]; if (!(m instanceof R)) continue;
+      outer: for (const rr of md.a[2] || []) {
+        const rep = ref(rr); if (!rep) continue;
+        for (const it of rep.a[3] || []) {
+          const si = ref(it); if (!si || si.t !== 'IFCSTYLEDITEM') continue;
+          for (const r of si.a[1] || []) { const c = styleColor(ref(r)); if (c) { matColor.set(m.i, c); break outer; } }
+        }
+      }
+    }
+    function resolveMat(e, depth = 0) {
+      if (!e || depth > 5) return null;
+      if (matColor.has(e.id)) return matColor.get(e.id);
+      const kids = {
+        IFCMATERIALLAYERSETUSAGE: () => [e.a[0]], IFCMATERIALLAYERSET: () => e.a[0], IFCMATERIALLAYER: () => [e.a[0]],
+        IFCMATERIALLIST: () => e.a[0], IFCMATERIALCONSTITUENTSET: () => e.a[2], IFCMATERIALCONSTITUENT: () => [e.a[2]],
+        IFCMATERIALPROFILESETUSAGE: () => [e.a[0]], IFCMATERIALPROFILESET: () => e.a[2], IFCMATERIALPROFILE: () => [e.a[2]],
+      }[e.t];
+      if (!kids) return null;
+      for (const r of kids() || []) { const c = resolveMat(ref(r), depth + 1); if (c) return c; }
+      return null;
+    }
+    const prodMat = new Map();
+    for (const ra of all('IFCRELASSOCIATESMATERIAL')) {
+      const c = resolveMat(ref(ra.a[5])); if (!c) continue;
+      for (const r of ra.a[4] || []) if (r instanceof R) prodMat.set(r.i, c);
+    }
+
+    // ---- relationships ----
+    const container = new Map(), parent = new Map(), defs = new Map(), typeOf = new Map();
+    for (const rc of all('IFCRELCONTAINEDINSPATIALSTRUCTURE')) for (const r of rc.a[4] || []) if (r instanceof R && rc.a[5]) container.set(r.i, rc.a[5].i);
+    for (const ra of all('IFCRELAGGREGATES')) for (const r of ra.a[5] || []) if (r instanceof R && ra.a[4]) parent.set(r.i, ra.a[4].i);
+    for (const rn of all('IFCRELNESTS')) for (const r of rn.a[5] || []) if (r instanceof R && rn.a[4]) parent.set(r.i, rn.a[4].i);
+    for (const rd of all('IFCRELDEFINESBYPROPERTIES')) {
+      const d = rd.a[5]; if (!(d instanceof R)) continue;
+      for (const r of rd.a[4] || []) if (r instanceof R) { let l = defs.get(r.i); if (!l) defs.set(r.i, l = []); l.push(d.i); }
+    }
+    for (const rt of all('IFCRELDEFINESBYTYPE')) for (const r of rt.a[4] || []) if (r instanceof R && rt.a[5]) typeOf.set(r.i, rt.a[5].i);
+    const storeyOf = id => {
+      for (let i = 0, cur = id; i < 30 && cur != null; i++) {
+        const c = container.get(cur); if (c != null) { const s = get(c); if (s && s.t === 'IFCBUILDINGSTOREY') return c; }
+        const e = get(cur); if (e && e.t === 'IFCBUILDINGSTOREY') return cur;
+        cur = c != null ? c : parent.get(cur);
+      }
+      return null;
+    };
+
+    // ---- representation items ----
+    function bodyReps(pds) {
+      if (!pds) return [];
+      const reps = (pds.a[2] || []).map(ref).filter(Boolean);
+      let body = reps.filter(r => /^(body|facetation)$/i.test(r.a[1] || ''));
+      if (body.length > 1) body = body.filter(r => /^body$/i.test(r.a[1] || '')).slice(0, 1).concat(body.filter(r => !/^body$/i.test(r.a[1] || '')).slice(0, 0));
+      if (!body.length) body = reps.filter(r => /SweptSolid|Brep|Tessellation|MappedRepresentation|Clipping|CSG|SurfaceModel|SolidModel/i.test(r.a[2] || ''));
+      return body;
+    }
+    function item(e, M, inh, part, depth = 0) {
+      if (!e || depth > 12) return;
+      const col = itemStyle.get(e.id) || inh;
+      const a = e.a; const T = [];
+      switch (e.t) {
+        case 'IFCMAPPEDITEM': {
+          const src = ref(a[0]); if (!src) return;
+          const M2 = mul(M, mul(xformOp(ref(a[1])), place(ref(src.a[0]))));
+          const rep = ref(src.a[1]); if (!rep) return;
+          for (const r of rep.a[3] || []) item(ref(r), M2, col, part, depth + 1);
+          return;
+        }
+        case 'IFCBOOLEANRESULT': case 'IFCBOOLEANCLIPPINGRESULT':
+          item(ref(a[1]), M, col, part, depth + 1);
+          if (a[0] && a[0].e === 'UNION') item(ref(a[2]), M, col, part, depth + 1);
+          return;
+        case 'IFCCSGSOLID': item(ref(a[0]), M, col, part, depth + 1); return;
+        case 'IFCEXTRUDEDAREASOLID': case 'IFCEXTRUDEDAREASOLIDTAPERED': {
+          const M2 = mul(M, place(ref(a[1]))); const d = dirv(ref(a[2])) || [0, 0, 1];
+          for (const pr of profile(ref(a[0]))) extrude(pr, d, a[3], M2, T);
+          emit(T, true, part(col)); return;
+        }
+        case 'IFCREVOLVEDAREASOLID': case 'IFCREVOLVEDAREASOLIDTAPERED': {
+          const M2 = mul(M, place(ref(a[1]))); const ax = ref(a[2]);
+          const P = ax ? coords(ref(ax.a[0])) : [0, 0, 0]; const D = ax && ax.a[1] ? dirv(ref(ax.a[1])) : [0, 0, 1];
+          for (const pr of profile(ref(a[0]))) revolve(pr, P, D, a[3] * angScale, M2, T);
+          emit(T, true, part(col)); return;
+        }
+        case 'IFCSWEPTDISKSOLID': case 'IFCSWEPTDISKSOLIDPOLYGONAL': tube(curve(ref(a[0])), a[1], M, part(col)); return;
+        case 'IFCBLOCK': extrude({ outer: [[0,0],[a[1],0],[a[1],a[2]],[0,a[2]]], holes: [] }, [0,0,1], a[3], mul(M, place(ref(a[0]))), T); emit(T, true, part(col)); return;
+        case 'IFCRIGHTCIRCULARCYLINDER': extrude({ outer: circ(a[2]), holes: [] }, [0,0,1], a[1], mul(M, place(ref(a[0]))), T); emit(T, true, part(col)); return;
+        case 'IFCFACETEDBREP': case 'IFCFACETEDBREPWITHVOIDS': case 'IFCADVANCEDBREP': case 'IFCADVANCEDBREPWITHVOIDS':
+          shellFaces(ref(a[0]), M, T); emit(T, true, part(col)); return;
+        case 'IFCSHELLBASEDSURFACEMODEL': case 'IFCFACEBASEDSURFACEMODEL':
+          for (const r of a[0] || []) shellFaces(ref(r), M, T); emit(T, false, part(col), M); return;
+        case 'IFCCLOSEDSHELL': shellFaces(e, M, T); emit(T, true, part(col)); return;
+        case 'IFCOPENSHELL': case 'IFCCONNECTEDFACESET': shellFaces(e, M, T); emit(T, false, part(col), M); return;
+        case 'IFCTRIANGULATEDFACESET': case 'IFCTRIANGULATEDIRREGULARNETWORK': {
+          const C = (ref(a[0]) || { a: [[]] }).a[0];
+          let ci = Array.isArray(a[3]) ? a[3] : a.find((x, i) => i > 1 && Array.isArray(x) && Array.isArray(x[0]));
+          const pn = Array.isArray(a[4]) && !Array.isArray(a[4][0]) ? a[4] : null;
+          for (const f of ci || []) {
+            const p = f.map(i => C[(pn ? pn[i - 1] : i) - 1]);
+            if (p[0] && p[1] && p[2]) tri(T, M, p[0], p[1], p[2]);
+          }
+          emit(T, a[2] && a[2].e === 'T', part(col), M); return;
+        }
+        case 'IFCPOLYGONALFACESET': {
+          const C = (ref(a[0]) || { a: [[]] }).a[0]; const pn = Array.isArray(a[3]) ? a[3] : null;
+          const idx = i => C[(pn ? pn[i - 1] : i) - 1];
+          for (const fr of a[2] || []) {
+            const f = ref(fr); if (!f) continue;
+            const holes = f.t === 'IFCINDEXEDPOLYGONALFACEWITHVOIDS' ? (f.a[1] || []).map(l => l.map(idx)) : [];
+            polyFace(f.a[0].map(idx), holes, M, T);
+          }
+          emit(T, a[1] && a[1].e === 'T', part(col), M); return;
+        }
+        default: return;
+      }
+    }
+
+    // ---- products ----
+    const pdsIds = new Set(byType.get('IFCPRODUCTDEFINITIONSHAPE') || []);
+    const cand = [];
+    for (const e of ents.values()) {
+      if (SKIP_PARSE.has(e.t) || NO_GEOM.has(e.t)) continue;
+      const g = get(e.id);
+      if (g.a.length >= 7 && g.a[6] instanceof R && pdsIds.has(g.a[6].i) && (g.a[5] == null || g.a[5] instanceof R)) cand.push(g);
+    }
+    const products = [];
+    let failed = 0, t0 = Date.now();
+    for (let k = 0; k < cand.length; k++) {
+      const e = cand[k];
+      try {
+        const M = mul(S, lp(ref(e.a[5])));
+        const fallback = prodMat.get(e.id) || (typeOf.has(e.id) && prodMat.get(typeOf.get(e.id))) || typeColor(e.t);
+        const parts = new Map();
+        const part = col => { const c = col || fallback; const key = c.map(v => v.toFixed(3)).join(','); let p = parts.get(key); if (!p) parts.set(key, p = { color: c, pos: [] }); return p.pos; };
+        for (const rep of bodyReps(ref(e.a[6]))) for (const r of rep.a[3] || []) item(ref(r), M, null, part);
+        const ps = [...parts.values()].filter(p => p.pos.length >= 9);
+        if (ps.length) {
+          const st = storeyOf(e.id);
+          products.push({ id: e.id, type: e.t, group: groupOf(e.t), name: e.a[2] || '', gid: e.a[0] || '', storey: st, parts: ps, hidden: /^IFCSPACE/.test(e.t) });
+        }
+      } catch (err) { failed++; }
+      if (Date.now() - t0 > 40) { progress(k / cand.length); await new Promise(r => setTimeout(r, 0)); t0 = Date.now(); }
+    }
+
+    const storeys = all('IFCBUILDINGSTOREY').map(s => ({ id: s.id, name: s.a[2] || ('Storey #' + s.id), z: mul(S, lp(ref(s.a[5])))[14] })).sort((p, q) => p.z - q.z);
+
+    // ---- properties ----
+    const fmt = v => {
+      if (v == null) return '';
+      if (v instanceof R) { const e = get(v.i); return e ? (e.a[2] || e.a[0] || prettyClass(e.t)) : ''; }
+      if (Array.isArray(v)) return v.map(fmt).join(', ');
+      if (typeof v === 'object') { if (v.e) return v.e === 'T' ? 'Yes' : v.e === 'F' ? 'No' : v.e.replace(/_/g, ' ').toLowerCase(); return fmt(v.v); }
+      if (typeof v === 'number') return Math.abs(v) >= 1e5 || (v !== 0 && Math.abs(v) < 1e-3) ? v.toExponential(3) : String(+v.toFixed(4));
+      return String(v);
+    };
+    function psetRows(d) {
+      const rows = [];
+      if (!d) return rows;
+      if (d.t === 'IFCPROPERTYSET') for (const r of d.a[4] || []) {
+        const p = ref(r); if (!p) continue;
+        if (p.t === 'IFCPROPERTYSINGLEVALUE') rows.push([p.a[0], fmt(p.a[2])]);
+        else if (p.t === 'IFCPROPERTYENUMERATEDVALUE' || p.t === 'IFCPROPERTYLISTVALUE') rows.push([p.a[0], fmt(p.a[2])]);
+        else if (p.t === 'IFCPROPERTYBOUNDEDVALUE') rows.push([p.a[0], fmt(p.a[3]) + ' – ' + fmt(p.a[2])]);
+      }
+      if (d.t === 'IFCELEMENTQUANTITY') for (const r of d.a[5] || []) { const q = ref(r); if (q) rows.push([q.a[0], fmt(q.a[3])]); }
+      return rows;
+    }
+    function props(id) {
+      const e = get(id); if (!e) return [];
+      const a = e.a;
+      const attrs = [['Class', prettyClass(e.t)], ['Name', a[2]], ['Description', a[3]], ['Object type', a[4]], ['GlobalId', a[0]]];
+      if (typeof a[7] === 'string') attrs.push(['Tag', a[7]]);
+      const st = storeyOf(id); if (st != null) attrs.push(['Storey', (get(st).a[2] || '')]);
+      const groups = [{ name: 'Attributes', rows: attrs.filter(r => r[1] != null && r[1] !== '').map(r => [r[0], fmt(r[1])]) }];
+      for (const d of defs.get(id) || []) { const de = get(d); const rows = psetRows(de); if (rows.length) groups.push({ name: de.a[2] || 'Properties', rows }); }
+      if (typeOf.has(id)) {
+        const te = get(typeOf.get(id));
+        if (te) {
+          groups.push({ name: 'Type', rows: [['Class', prettyClass(te.t)], ['Name', fmt(te.a[2])]] });
+          for (const r of te.a[5] || []) { const d = ref(r); const rows = psetRows(d); if (rows.length) groups.push({ name: (d.a[2] || 'Properties') + ' (type)', rows }); }
+        }
+      }
+      return groups;
+    }
+
+    const projName = (all('IFCPROJECT')[0] || { a: [] }).a[2] || '';
+    return { products, storeys, props, schema, unit: lenName, failed, candidates: cand.length, projectName: projName };
+  }
+  return { load, typeColor, groupOf };
+})();
+/*IFC-END*/
+
+</script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const V3 = THREE.Vector3;
+const E = [new V3(1, 0, 0), new V3(0, 1, 0), new V3(0, 0, 1)];
+const AX = ['X', 'Y', 'Z'];
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- renderer ----------
+const vp = $('vp'), canvas = $('cv');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setClearColor(0x000000, 0);
+renderer.localClippingEnabled = true;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 1000);
+camera.up.set(0, 0, 1);
+camera.position.set(14, -18, 12);
+scene.add(camera);
+const hemi = new THREE.HemisphereLight(0xffffff, 0x7d848a, 0.72); hemi.position.set(0, 0, 1); scene.add(hemi);
+const head = new THREE.DirectionalLight(0xffffff, 0.42); head.position.set(0.3, 0.5, 1);
+const headTarget = new THREE.Object3D(); headTarget.position.set(0, 0, -1);
+camera.add(head); camera.add(headTarget); head.target = headTarget;
+const sky = new THREE.DirectionalLight(0xffffff, 0.28); sky.position.set(0.4, -0.7, 1); scene.add(sky);
+const modelRoot = new THREE.Group(); scene.add(modelRoot);
+const gizmoRoot = new THREE.Group(); scene.add(gizmoRoot);
+let dirty = true;
+const redraw = () => { dirty = true; };
+
+// ---------- clipping + cut-face shader ----------
+const clipPlanes = [];
+const capU = { uCut: { value: new THREE.Color(0xc4432a) }, uFill: { value: 2 } };
+function capShader(sh) {
+  sh.uniforms.uCut = capU.uCut; sh.uniforms.uFill = capU.uFill;
+  sh.fragmentShader = 'uniform vec3 uCut;\nuniform float uFill;\n' + sh.fragmentShader.replace('#include <dithering_fragment>',
+    '#include <dithering_fragment>\n if(!gl_FrontFacing && uFill > 0.5){ float hb = 1.0; if(uFill > 1.5){ hb = mod(floor((gl_FragCoord.x + gl_FragCoord.y) / 5.0), 2.0) < 1.0 ? 1.0 : 0.74; } gl_FragColor = vec4(uCut * hb, 1.0); }');
+}
+const matCache = new Map();
+function getMat(c) {
+  const key = c.map(v => (+v).toFixed(3)).join(',');
+  let m = matCache.get(key); if (m) return m;
+  const glass = c[3] < 0.99;
+  m = new THREE.MeshPhongMaterial({
+    color: new THREE.Color(c[0], c[1], c[2]), side: THREE.DoubleSide, transparent: glass, opacity: c[3], depthWrite: !glass,
+    shininess: glass ? 70 : 8, specular: new THREE.Color(glass ? 0x555555 : 0x0c0c0c), clippingPlanes: clipPlanes,
+    polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
+  });
+  if (!glass) m.onBeforeCompile = capShader;
+  matCache.set(key, m);
+  return m;
+}
+const selColor = new THREE.Color(0x2b78d0);
+const selCache = new Map();
+function selMat(base) {
+  let m = selCache.get(base); if (m) return m;
+  m = base.clone();
+  m.clippingPlanes = clipPlanes;
+  m.color.lerp(selColor, 0.55);
+  m.emissive = selColor.clone().multiplyScalar(0.18);
+  if (!base.transparent) m.onBeforeCompile = capShader; else m.opacity = Math.max(base.opacity, 0.55);
+  selCache.set(base, m);
+  return m;
+}
+const edgeMat = new THREE.LineBasicMaterial({ color: 0x162027, transparent: true, opacity: 0.4, clippingPlanes: clipPlanes });
+const gizFace = new THREE.MeshBasicMaterial({ color: 0xc4432a, transparent: true, opacity: 0.05, side: THREE.DoubleSide, depthWrite: false });
+const gizFill = gizFace.clone(); gizFill.opacity = 0.22;
+const gizFillHot = gizFace.clone(); gizFillHot.opacity = 0.45;
+const gizLine = new THREE.LineBasicMaterial({ color: 0xc4432a, transparent: true, opacity: 0.95 });
+const boxKnob = new THREE.MeshBasicMaterial({ color: 0xc4432a });
+const boxKnobHot = new THREE.MeshBasicMaterial({ color: 0xc4432a });
+
+// ---------- model state ----------
+let model = null;
+let selected = null, isolate = null;
+let visMeshes = null;
+let edgesOn = false, scissors = false, showHandles = true;
+
+const STL_COLORS = [[0.73, 0.76, 0.79, 1], [0.79, 0.72, 0.62, 1], [0.66, 0.76, 0.69, 1], [0.72, 0.69, 0.79, 1]];
+const triangulate = (o, h) => THREE.ShapeUtils.triangulateShape(o.map(p => new THREE.Vector2(p[0], p[1])), h.map(l => l.map(p => new THREE.Vector2(p[0], p[1]))));
+
+function parseSTL(buf) {
+  const dv = new DataView(buf);
+  let binary = false;
+  if (buf.byteLength >= 84) { const n = dv.getUint32(80, true); if (84 + n * 50 === buf.byteLength) binary = true; }
+  if (!binary) {
+    const headTxt = new TextDecoder().decode(new Uint8Array(buf, 0, Math.min(256, buf.byteLength)));
+    if (!/^\s*solid/i.test(headTxt)) binary = true;
+  }
+  if (binary) {
+    const n = dv.getUint32(80, true); const out = new Float32Array(n * 9);
+    for (let i = 0; i < n; i++) { const o = 84 + i * 50 + 12; for (let k = 0; k < 9; k++) out[i * 9 + k] = dv.getFloat32(o + k * 4, true); }
+    return { pos: out, kind: 'STL (binary)' };
+  }
+  const txt = new TextDecoder().decode(new Uint8Array(buf));
+  const re = /vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/g; const v = []; let m;
+  while ((m = re.exec(txt))) v.push(+m[1], +m[2], +m[3]);
+  return { pos: new Float32Array(v.slice(0, v.length - v.length % 9)), kind: 'STL (ASCII)' };
+}
+
+function disposeModel() {
+  modelRoot.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+  modelRoot.clear();
+  selCache.forEach(m => m.dispose()); selCache.clear();
+  selected = null; isolate = null; visMeshes = null;
+  planes.forEach(p => gizmoRoot.remove(p.giz)); planes = [];
+  box.on = false; $('boxOn').checked = false; $('boxCtl').hidden = true;
+  updateClip();
+}
+
+function buildModel(prods, meta) {
+  disposeModel();
+  const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+  for (const p of prods) for (const pt of p.parts) { const a = pt.pos; for (let i = 0; i < a.length; i += 3) for (let k = 0; k < 3; k++) { const v = a[i + k]; if (v < lo[k]) lo[k] = v; if (v > hi[k]) hi[k] = v; } }
+  if (!isFinite(lo[0])) { lo.fill(0); hi.fill(0); }
+  const off = new V3((lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2);
+  const els = new Map(), groups = new Map();
+  let tris = 0;
+  for (const p of prods) {
+    const el = { id: p.id, type: p.type, group: p.group, name: p.name, gid: p.gid, storey: p.storey, file: p.file, meshes: [], hidden: false, tris: 0 };
+    for (const pt of p.parts) {
+      const a = pt.pos, f = new Float32Array(a.length);
+      for (let i = 0; i < a.length; i += 3) { f[i] = a[i] - off.x; f[i + 1] = a[i + 1] - off.y; f[i + 2] = a[i + 2] - off.z; }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(f, 3));
+      g.computeVertexNormals(); g.computeBoundingBox(); g.computeBoundingSphere();
+      const mesh = new THREE.Mesh(g, getMat(pt.color));
+      mesh.userData.el = el; mesh.renderOrder = pt.color[3] < 0.99 ? 2 : 0;
+      modelRoot.add(mesh); el.meshes.push(mesh); el.tris += f.length / 9;
+    }
+    tris += el.tris;
+    els.set(el.id, el);
+    let gr = groups.get(p.group);
+    if (!gr) groups.set(p.group, gr = { name: p.group, count: 0, visible: p.group !== 'Spaces', color: p.parts[0].color });
+    gr.count++;
+  }
+  const bbox = new THREE.Box3(new V3(lo[0], lo[1], lo[2]).sub(off), new V3(hi[0], hi[1], hi[2]).sub(off));
+  model = Object.assign({ els, groups, offset: off, bbox, tris, storeyVis: new Map() }, meta);
+  for (const s of model.storeys) model.storeyVis.set(s.id, true);
+  applyVisibility();
+  if (edgesOn) buildEdges();
+  renderModelInfo(); renderGroups(); renderStoreys(); renderSelection(); renderPlanes(); renderBox();
+  fit(new V3(1, -1.25, 0.9).normalize(), true);
+}
+
+function applyVisibility() {
+  if (!model) return;
+  for (const el of model.els.values()) {
+    const g = model.groups.get(el.group);
+    const v = !el.hidden && (!g || g.visible) && (el.storey == null || model.storeyVis.get(el.storey) !== false) && (!isolate || isolate.has(el.id));
+    for (const m of el.meshes) m.visible = v;
+  }
+  visMeshes = null; redraw();
+}
+const visibleMeshes = () => visMeshes || (visMeshes = modelRoot.children.filter(m => m.visible));
+
+function buildEdges() {
+  for (const m of modelRoot.children) {
+    if (!m.userData.edges) { const l = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 28), edgeMat); l.raycast = () => {}; m.add(l); m.userData.edges = l; }
+    m.userData.edges.visible = edgesOn;
+  }
+  redraw();
+}
+
+// ---------- loading ----------
+function showLoad(msg, p) { $('loadOv').hidden = false; $('loadMsg').textContent = msg; $('loadBar').style.width = Math.round((p || 0) * 100) + '%'; }
+const hideLoad = () => { $('loadOv').hidden = true; };
+const setStatus = s => { $('status').textContent = s; };
+const tick0 = () => new Promise(r => setTimeout(r, 30));
+
+async function openFiles(list) {
+  const files = [...list].filter(f => /\.(ifc|stl)$/i.test(f.name));
+  if (!files.length) { setStatus('Only .ifc and .stl files can be opened here.'); return; }
+  const t0 = performance.now();
+  const prods = []; const storeys = []; const propsFns = {}; const kinds = []; let unit = null; let failed = 0;
+  try {
+    for (let fi = 0; fi < files.length; fi++) {
+      const f = files[fi];
+      showLoad(`Reading ${f.name}…`, 0); await tick0();
+      if (/\.ifc$/i.test(f.name)) {
+        const text = await f.text();
+        showLoad(`Building geometry for ${f.name}…`, 0); await tick0();
+        const res = await IFCLoader.load(text, { triangulate, progress: p => showLoad(`Building geometry for ${f.name}…`, p) });
+        for (const p of res.products) prods.push(Object.assign(p, { id: fi + ':' + p.id, storey: p.storey == null ? null : fi + ':' + p.storey, file: fi, raw: p.id }));
+        for (const s of res.storeys) storeys.push({ id: fi + ':' + s.id, name: s.name, z: s.z });
+        propsFns[fi] = res.props; kinds.push(res.schema); unit = 'm'; failed += res.failed;
+      } else {
+        const buf = await f.arrayBuffer();
+        const r = parseSTL(buf);
+        prods.push({ id: fi + ':stl', type: 'STL', group: 'Meshes', name: f.name, gid: '', storey: null, file: fi, parts: [{ color: STL_COLORS[fi % STL_COLORS.length], pos: r.pos }] });
+        kinds.push(r.kind); if (unit === null) unit = '';
+      }
+    }
+  } catch (err) {
+    hideLoad(); setStatus('Could not open the file: ' + (err && err.message ? err.message : err) + '. Check that it is a valid IFC (STEP) or STL file.'); return;
+  }
+  showLoad('Uploading to the graphics card…', 1); await tick0();
+  buildModel(prods, { name: files.map(f => f.name).join(', '), kind: [...new Set(kinds)].join(', '), unit: unit || '', storeys, propsFns, failed });
+  hideLoad();
+  const secs = ((performance.now() - t0) / 1000).toFixed(1);
+  setStatus(`Opened ${model.els.size.toLocaleString()} element${model.els.size === 1 ? '' : 's'}, ${model.tris.toLocaleString()} triangles in ${secs} s` + (failed ? ` · ${failed} element(s) skipped (unsupported geometry)` : ''));
+  $('fileName').textContent = model.name;
+}
+
+// ---------- formatting ----------
+const U = () => (model && model.unit) || '';
+function fmtLen(v) { const a = Math.abs(v); const d = a >= 1000 ? 0 : a >= 100 ? 1 : a >= 10 ? 2 : 3; return v.toFixed(d) + (U() ? ' ' + U() : ''); }
+
+// ---------- left panel ----------
+function renderModelInfo() {
+  const s = model.bbox.getSize(new V3());
+  const rows = [['File', model.name], ['Format', model.kind], ['Elements', model.els.size.toLocaleString()], ['Triangles', model.tris.toLocaleString()],
+    ['Size', [s.x, s.y, s.z].map(v => v.toFixed(2)).join(' × ') + (U() ? ' ' + U() : ' units')]];
+  if (model.failed) rows.push(['Skipped', model.failed + ' elements']);
+  $('modelInfo').innerHTML = rows.map(r => `<dt>${esc(r[0])}</dt><dd>${esc(r[1])}</dd>`).join('');
+}
+const swatch = c => `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})`;
+function renderGroups() {
+  const gs = [...model.groups.values()].sort((a, b) => b.count - a.count);
+  $('groupsTitle').textContent = model.storeys.length || model.kind.indexOf('IFC') >= 0 ? 'Classes' : 'Meshes';
+  if (model.groups.size === 1 && model.groups.has('Meshes')) {
+    $('groups').innerHTML = [...model.els.values()].map(el => `<label class="row"><input type="checkbox" data-el="${esc(el.id)}" ${el.hidden ? '' : 'checked'}><span class="sw" style="background:${swatch(el.meshes[0].material.color.toArray())}"></span><span class="nm">${esc(el.name)}</span><span class="ct">${el.tris.toLocaleString()}</span></label>`).join('');
+    return;
+  }
+  $('groups').innerHTML = gs.map(g => `<label class="row"><input type="checkbox" data-group="${esc(g.name)}" ${g.visible ? 'checked' : ''}><span class="sw" style="background:${swatch(g.color)}"></span><span class="nm">${esc(g.name)}</span><span class="ct">${g.count}</span></label>`).join('');
+}
+function renderStoreys() {
+  $('storeySec').hidden = !model.storeys.length;
+  $('storeys').innerHTML = model.storeys.map(s => `<div class="row"><input type="checkbox" id="st-${esc(s.id)}" data-storey="${esc(s.id)}" ${model.storeyVis.get(s.id) !== false ? 'checked' : ''}><label class="nm" for="st-${esc(s.id)}">${esc(s.name)}</label><span class="ct">${s.z.toFixed(2)}</span><button class="mini" data-plan="${esc(s.id)}" title="Cut a floor plan 1.2 m above this level">Plan</button></div>`).join('');
+}
+$('groups').addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.group) { model.groups.get(t.dataset.group).visible = t.checked; applyVisibility(); }
+  if (t.dataset.el) { model.els.get(t.dataset.el).hidden = !t.checked; applyVisibility(); }
+});
+$('storeys').addEventListener('change', e => { const id = e.target.dataset.storey; if (id) { model.storeyVis.set(id, e.target.checked); applyVisibility(); } });
+$('storeys').addEventListener('click', e => { const id = e.target.dataset && e.target.dataset.plan; if (id) planCut(id); });
+$('showAll').addEventListener('click', showAll);
+function showAll() {
+  if (!model) return;
+  for (const el of model.els.values()) el.hidden = false;
+  for (const g of model.groups.values()) if (g.name !== 'Spaces') g.visible = true;
+  for (const k of model.storeyVis.keys()) model.storeyVis.set(k, true);
+  isolate = null; applyVisibility(); renderGroups(); renderStoreys(); renderSelection();
+}
+
+function select(el) {
+  if (selected) for (const m of selected.meshes) if (m.userData.base) { m.material = m.userData.base; m.userData.base = null; }
+  selected = el;
+  if (el) for (const m of el.meshes) { m.userData.base = m.material; m.material = selMat(m.material); }
+  renderSelection(); redraw();
+}
+function renderSelection() {
+  const host = $('selection');
+  if (!selected) { host.innerHTML = '<p class="empty">Click an element in the view to see its properties.</p>'; return; }
+  const el = selected;
+  let groups = [];
+  const fn = model.propsFns && model.propsFns[el.file];
+  if (fn && el.type !== 'STL') groups = fn(+String(el.id).split(':')[1]);
+  else {
+    const bb = new THREE.Box3(); el.meshes.forEach(m => bb.expandByObject(m)); const s = bb.getSize(new V3());
+    groups = [{ name: 'Mesh', rows: [['File', el.name], ['Triangles', el.tris.toLocaleString()], ['Size', [s.x, s.y, s.z].map(v => v.toFixed(3)).join(' × ')]] }];
+  }
+  const cls = el.type === 'STL' ? 'STL mesh' : (groups[0] && groups[0].rows[0] ? groups[0].rows[0][1] : el.type);
+  host.innerHTML = `<div class="selhead"><strong>${esc(el.name || '(unnamed)')}</strong><span>${esc(cls)}</span></div>
+    <div class="btnrow" style="margin:10px 0"><button class="btn" data-sa="hide">Hide</button><button class="btn" data-sa="iso">${isolate ? 'Show others' : 'Isolate'}</button><button class="btn" data-sa="box">Section box</button><button class="btn" data-sa="zoom">Zoom</button></div>
+    ${groups.map((g, i) => `<details ${i < 2 ? 'open' : ''}><summary>${esc(g.name)}</summary><dl class="kv">${g.rows.map(r => `<dt>${esc(r[0])}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl></details>`).join('')}`;
+}
+$('selection').addEventListener('click', e => {
+  const a = e.target.dataset && e.target.dataset.sa; if (!a || !selected) return;
+  if (a === 'hide') hideSelected();
+  if (a === 'iso') isolateSelected();
+  if (a === 'box') boxToSelection();
+  if (a === 'zoom') { const bb = elBox(selected); fit(null, false, bb); }
+});
+function hideSelected() { if (!selected) return; selected.hidden = true; const s = selected; select(null); applyVisibility(); if (model.groups.has('Meshes')) renderGroups(); setStatus(`Hid ${s.name || 'element'} · Show all brings it back`); }
+function isolateSelected() {
+  if (isolate) { isolate = null; } else if (selected) { isolate = new Set([selected.id]); }
+  applyVisibility(); renderSelection();
+}
+const elBox = el => { const bb = new THREE.Box3(); el.meshes.forEach(m => { m.geometry.boundingBox && bb.union(m.geometry.boundingBox); }); return bb; };
+
+// ---------- sections ----------
+let planes = []; let planeSeq = 1;
+const box = { on: false, min: new V3(), max: new V3(), planes: Array.from({ length: 6 }, () => new THREE.Plane()), giz: null, handles: [] };
+
+function axisRange(axis) {
+  const b = model ? model.bbox : new THREE.Box3(new V3(-1, -1, -1), new V3(1, 1, 1));
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < 8; i++) { const c = new V3(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z); const d = c.dot(axis); lo = Math.min(lo, d); hi = Math.max(hi, d); }
+  const pad = (hi - lo) * 0.02 + 1e-6; return [lo - pad, hi + pad];
+}
+function makePlaneGizmo(p) {
+  const g = new THREE.Group();
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), gizFace); face.renderOrder = 10;
+  const bandGeo = new THREE.BufferGeometry(); bandGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(72), 3));
+  const band = new THREE.Mesh(bandGeo, gizFill); band.userData.handle = { kind: 'plane', p }; band.renderOrder = 11;
+  const lineGeo = new THREE.BufferGeometry(); lineGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(24), 3));
+  const line = new THREE.LineSegments(lineGeo, gizLine); line.renderOrder = 12;
+  g.add(face, band, line); Object.assign(g.userData, { face, band, line });
+  gizmoRoot.add(g); return g;
+}
+function addPlane(axis, pos, name, tag) {
+  if (!model) return null;
+  if (planes.length >= 6) { setStatus('Up to six section planes at a time. Remove one to add another.'); return null; }
+  const p = { id: planeSeq++, axis: axis.clone().normalize(), pos, flip: false, on: true, name, tag, plane: new THREE.Plane() };
+  p.giz = makePlaneGizmo(p);
+  planes.push(p); updateClip(); renderPlanes();
+  return p;
+}
+function addAxisPlane(i) {
+  const n = planes.filter(p => p.tag === AX[i]).length;
+  const c = model.bbox.getCenter(new V3());
+  addPlane(E[i], c.getComponent(i), 'Plane ' + AX[i] + (n ? ' ' + (n + 1) : ''), AX[i]);
+}
+function planCut(sid) {
+  const s = model.storeys.find(x => x.id === sid); if (!s) return;
+  const z = s.z - model.offset.z + 1.2;
+  let p = planes.find(x => x.plan);
+  if (!p) { p = addPlane(E[2], z, 'Plan · ' + s.name, 'Z'); if (!p) return; p.plan = true; }
+  else { p.pos = z; p.on = true; p.flip = false; p.name = 'Plan · ' + s.name; }
+  updateClip(); renderPlanes(); setView('top');
+  setStatus(`Floor plan of ${s.name}, cut 1.2 m above its level.`);
+}
+function addPlaneFromHit(hit) {
+  const n = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
+  if (n.dot(ray.ray.direction) > 0) n.negate();
+  let tag = 'Face', name = 'Surface cut';
+  for (let i = 0; i < 3; i++) { const d = n.dot(E[i]); if (Math.abs(d) > 0.998) { n.copy(E[i]).multiplyScalar(Math.sign(d)); tag = AX[i]; name = 'Cut ' + (d < 0 ? '−' : '+') + AX[i]; } }
+  const diag = model.bbox.getSize(new V3()).length();
+  const p = addPlane(n, n.dot(hit.point) - diag * 0.003, name, tag);
+  if (p) setStatus(`${name} placed on ${hit.object.userData.el.name || 'the surface'}. Drag the red frame or the slider to move it.`);
+}
+function updateClip() {
+  clipPlanes.length = 0;
+  for (const p of planes) {
+    p.plane.normal.copy(p.axis).multiplyScalar(p.flip ? 1 : -1);
+    p.plane.constant = p.flip ? -p.pos : p.pos;
+    if (p.on) clipPlanes.push(p.plane);
+    placePlaneGizmo(p);
+  }
+  if (box.on) for (let i = 0; i < 3; i++) {
+    box.planes[2 * i].normal.copy(E[i]); box.planes[2 * i].constant = -box.min.getComponent(i);
+    box.planes[2 * i + 1].normal.copy(E[i]).negate(); box.planes[2 * i + 1].constant = box.max.getComponent(i);
+    clipPlanes.push(box.planes[2 * i], box.planes[2 * i + 1]);
+  }
+  placeBoxGizmo();
+  redraw();
+}
+function placePlaneGizmo(p) {
+  const g = p.giz; g.visible = p.on && showHandles && !!model;
+  if (!g.visible) return;
+  const q = new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), p.axis);
+  const u = new V3(1, 0, 0).applyQuaternion(q), v = new V3(0, 1, 0).applyQuaternion(q);
+  const o = p.axis.clone().multiplyScalar(p.pos), b = model.bbox;
+  let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+  for (let i = 0; i < 8; i++) { const c = new V3(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).sub(o); const a = c.dot(u), d = c.dot(v); u0 = Math.min(u0, a); u1 = Math.max(u1, a); v0 = Math.min(v0, d); v1 = Math.max(v1, d); }
+  const m = Math.max(u1 - u0, v1 - v0) * 0.07;
+  g.position.copy(o).addScaledVector(u, (u0 + u1) / 2).addScaledVector(v, (v0 + v1) / 2);
+  g.quaternion.copy(q);
+  const hu = (u1 - u0) / 2 + m, hv = (v1 - v0) / 2 + m, bw = m * 0.8;
+  const O = [[-hu, -hv], [hu, -hv], [hu, hv], [-hu, hv]], In = [[-hu + bw, -hv + bw], [hu - bw, -hv + bw], [hu - bw, hv - bw], [-hu + bw, hv - bw]];
+  const bp = g.userData.band.geometry.attributes.position, lp = g.userData.line.geometry.attributes.position;
+  for (let k = 0; k < 4; k++) {
+    const k2 = (k + 1) % 4, t = [O[k], O[k2], In[k2], O[k], In[k2], In[k]];
+    t.forEach((q2, j) => bp.setXYZ(k * 6 + j, q2[0], q2[1], 0));
+    lp.setXYZ(k * 2, O[k][0], O[k][1], 0); lp.setXYZ(k * 2 + 1, O[k2][0], O[k2][1], 0);
+  }
+  bp.needsUpdate = true; lp.needsUpdate = true;
+  g.userData.band.geometry.computeBoundingSphere(); g.userData.line.geometry.computeBoundingSphere();
+  g.userData.face.scale.set(2 * hu, 2 * hv, 1);
+}
+function placeBoxGizmo() {
+  if (!box.giz) {
+    box.giz = new THREE.Group();
+    box.edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1)), gizLine); box.giz.add(box.edges);
+    const sg = new THREE.SphereGeometry(1, 20, 14);
+    for (let i = 0; i < 3; i++) for (const side of ['min', 'max']) {
+      const h = new THREE.Mesh(sg, boxKnob); h.userData.handle = { kind: 'box', i, side }; h.renderOrder = 12;
+      box.giz.add(h); box.handles.push(h);
+    }
+    gizmoRoot.add(box.giz);
+  }
+  const on = box.on && showHandles && !!model;
+  box.giz.visible = on; box.handles.forEach(h => { h.visible = on; });
+  if (!on) return;
+  const c = box.min.clone().add(box.max).multiplyScalar(0.5), s = box.max.clone().sub(box.min);
+  box.edges.position.copy(c); box.edges.scale.set(Math.max(s.x, 1e-6), Math.max(s.y, 1e-6), Math.max(s.z, 1e-6));
+  const r = model.bbox.getSize(new V3()).length() * 0.011;
+  for (const h of box.handles) {
+    const { i, side } = h.userData.handle; const pos = c.clone();
+    pos.setComponent(i, (side === 'min' ? box.min : box.max).getComponent(i)); h.position.copy(pos);
+    h.scale.setScalar(h === hot ? r * 1.35 : r);
+  }
+}
+
+const ICON = {
+  eye: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  flip: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></svg>',
+  del: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+};
+const realPos = p => p.pos + p.axis.dot(model.offset);
+function renderPlanes() {
+  const host = $('planes');
+  if (!planes.length) { host.innerHTML = '<p class="empty">No section planes yet.</p>'; return; }
+  host.innerHTML = planes.map(p => {
+    const [lo, hi] = axisRange(p.axis);
+    return `<div class="plane ${p.on ? '' : 'off'}" data-pid="${p.id}">
+      <div class="plane-top"><span class="tag">${esc(p.tag)}</span><span class="nm" title="${esc(p.name)}">${esc(p.name)}</span>
+        <button class="ico" data-act="on" aria-pressed="${p.on}" title="${p.on ? 'Turn this cut off' : 'Turn this cut on'}" aria-label="Toggle cut">${ICON.eye}</button>
+        <button class="ico" data-act="flip" aria-pressed="${p.flip}" title="Keep the other side" aria-label="Flip kept side">${ICON.flip}</button>
+        <button class="ico" data-act="del" title="Remove plane" aria-label="Remove plane">${ICON.del}</button></div>
+      <div class="slide"><input type="range" id="pr-${p.id}" min="${lo}" max="${hi}" step="${(hi - lo) / 2000}" value="${p.pos}" aria-label="${esc(p.name)} position">
+        <input class="num" type="number" id="pn-${p.id}" step="${+((hi - lo) / 200).toPrecision(1)}" value="${realPos(p).toFixed(3)}" title="Position in model coordinates${U() ? ' (' + U() + ')' : ''}"></div></div>`;
+  }).join('');
+}
+function syncPlaneRow(p) {
+  const r = $('pr-' + p.id), n = $('pn-' + p.id);
+  if (r && document.activeElement !== r) r.value = p.pos;
+  if (n && document.activeElement !== n) n.value = realPos(p).toFixed(3);
+}
+$('planes').addEventListener('input', e => {
+  const row = e.target.closest('[data-pid]'); if (!row) return;
+  const p = planes.find(x => x.id === +row.dataset.pid); if (!p) return;
+  if (e.target.type === 'range') { p.pos = +e.target.value; syncPlaneRow(p); }
+  else { const v = parseFloat(e.target.value); if (isFinite(v)) { p.pos = v - p.axis.dot(model.offset); const r = $('pr-' + p.id); if (r) r.value = p.pos; } }
+  updateClip();
+});
+$('planes').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const p = planes.find(x => x.id === +b.closest('[data-pid]').dataset.pid); if (!p) return;
+  if (b.dataset.act === 'on') p.on = !p.on;
+  if (b.dataset.act === 'flip') p.flip = !p.flip;
+  if (b.dataset.act === 'del') { gizmoRoot.remove(p.giz); planes = planes.filter(x => x !== p); }
+  updateClip(); renderPlanes();
+});
+document.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => addAxisPlane('xyz'.indexOf(b.dataset.add))));
+$('clearCuts').addEventListener('click', () => { planes.forEach(p => gizmoRoot.remove(p.giz)); planes = []; box.on = false; $('boxOn').checked = false; $('boxCtl').hidden = true; updateClip(); renderPlanes(); });
+
+// section box sliders
+function dualRange(i) {
+  const wrap = document.createElement('div'); wrap.className = 'dual';
+  wrap.innerHTML = `<span class="ax">${AX[i]}</span><div class="dr"><div class="tr"></div><div class="fi"></div>
+    <button class="th" data-k="min" role="slider" aria-label="${AX[i]} minimum"></button><button class="th" data-k="max" role="slider" aria-label="${AX[i]} maximum"></button></div>
+    <div class="drv"><span></span><span></span></div>`;
+  const dr = wrap.querySelector('.dr'), fi = wrap.querySelector('.fi'), th = wrap.querySelectorAll('.th'), vals = wrap.querySelectorAll('.drv span');
+  const rng = () => axisRange(E[i]);
+  const update = () => {
+    const [lo, hi] = rng(); const a = box.min.getComponent(i), b = box.max.getComponent(i);
+    const pa = (a - lo) / (hi - lo) * 100, pb = (b - lo) / (hi - lo) * 100;
+    th[0].style.left = pa + '%'; th[1].style.left = pb + '%'; fi.style.left = pa + '%'; fi.style.width = (pb - pa) + '%';
+    const off = model ? model.offset.getComponent(i) : 0;
+    vals[0].textContent = (a + off).toFixed(2); vals[1].textContent = (b + off).toFixed(2);
+    th[0].setAttribute('aria-valuenow', (a + off).toFixed(2)); th[1].setAttribute('aria-valuenow', (b + off).toFixed(2));
+  };
+  const setV = (k, v) => {
+    const [lo, hi] = rng(); const gap = (hi - lo) * 0.005;
+    if (k === 'min') box.min.setComponent(i, Math.min(Math.max(v, lo), box.max.getComponent(i) - gap));
+    else box.max.setComponent(i, Math.max(Math.min(v, hi), box.min.getComponent(i) + gap));
+    update(); updateClip();
+  };
+  th.forEach(t => {
+    t.addEventListener('pointerdown', e => { t.setPointerCapture(e.pointerId); e.preventDefault(); t.focus(); });
+    t.addEventListener('pointermove', e => { if (!t.hasPointerCapture(e.pointerId)) return; const r = dr.getBoundingClientRect(); const [lo, hi] = rng(); setV(t.dataset.k, lo + (e.clientX - r.left) / r.width * (hi - lo)); });
+    t.addEventListener('keydown', e => { const [lo, hi] = rng(); const st = (hi - lo) / (e.shiftKey ? 20 : 100); const cur = t.dataset.k === 'min' ? box.min.getComponent(i) : box.max.getComponent(i);
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { setV(t.dataset.k, cur + st); e.preventDefault(); }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { setV(t.dataset.k, cur - st); e.preventDefault(); } });
+  });
+  return { el: wrap, update };
+}
+const boxUI = [0, 1, 2].map(dualRange);
+boxUI.forEach(b => $('boxSliders').appendChild(b.el));
+function renderBox() { boxUI.forEach(b => b.update()); }
+function resetBox() { if (!model) return; const pad = model.bbox.getSize(new V3()).length() * 0.004; box.min.copy(model.bbox.min).addScalar(-pad); box.max.copy(model.bbox.max).addScalar(pad); }
+function setBox(on) {
+  if (!model) return;
+  if (on && !box.on && box.min.equals(box.max)) resetBox();
+  box.on = on; $('boxOn').checked = on; $('boxCtl').hidden = !on;
+  updateClip(); renderBox();
+}
+$('boxOn').addEventListener('change', e => setBox(e.target.checked));
+$('boxReset').addEventListener('click', () => { resetBox(); updateClip(); renderBox(); });
+$('boxSel').addEventListener('click', boxToSelection);
+function boxToSelection() {
+  if (!selected) { setStatus('Select an element first, then fit the section box to it.'); return; }
+  const bb = elBox(selected); const pad = bb.getSize(new V3()).length() * 0.06 + 1e-3;
+  box.min.copy(bb.min).addScalar(-pad); box.max.copy(bb.max).addScalar(pad);
+  setBox(true); fit(null, false, bb);
+}
+
+$('fillSeg').addEventListener('click', e => {
+  const b = e.target.closest('[data-fill]'); if (!b) return;
+  capU.uFill.value = +b.dataset.fill;
+  $('fillSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); redraw();
+});
+$('handlesOn').addEventListener('change', e => { showHandles = e.target.checked; updateClip(); });
+
+// ---------- picking & interaction (registered before OrbitControls so handle drags win) ----------
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+function setRay(ev) { const r = canvas.getBoundingClientRect(); ndc.set((ev.clientX - r.left) / r.width * 2 - 1, -(ev.clientY - r.top) / r.height * 2 + 1); ray.setFromCamera(ndc, camera); }
+function pickModel(ev) {
+  setRay(ev);
+  const hits = ray.intersectObjects(visibleMeshes(), false);
+  for (const h of hits) if (clipPlanes.every(p => p.distanceToPoint(h.point) >= -1e-7)) return h;
+  return null;
+}
+function pickHandle(ev) {
+  if (!showHandles) return null;
+  setRay(ev);
+  const list = []; planes.forEach(p => { if (p.giz.visible) list.push(p.giz.userData.band); }); if (box.on) list.push(...box.handles.filter(h => h.visible));
+  if (!list.length) return null;
+  const hits = ray.intersectObjects(list, false);
+  return hits[0] || null;
+}
+function closestOnAxis(p1, d1, r) {
+  const d2 = r.direction, w0 = p1.clone().sub(r.origin);
+  const b = d1.dot(d2), d = d1.dot(w0), e = d2.dot(w0), den = 1 - b * b;
+  if (den < 1e-4) return null;
+  return (b * e - d) / den;
+}
+let drag = null, down = null, hot = null;
+function setHot(obj) {
+  if (hot === obj) return;
+  if (hot) hot.material = hot.userData.handle.kind === 'box' ? boxKnob : gizFill;
+  hot = obj; if (hot) hot.material = hot.userData.handle.kind === 'box' ? boxKnobHot : gizFillHot;
+  placeBoxGizmo();
+  canvas.style.cursor = hot ? 'grab' : scissors ? 'crosshair' : '';
+  redraw();
+}
+canvas.addEventListener('pointerdown', ev => {
+  down = { x: ev.clientX, y: ev.clientY, b: ev.button };
+  if (ev.button !== 0) return;
+  const h = pickHandle(ev);
+  if (h) {
+    controls.enabled = false;
+    try { canvas.setPointerCapture(ev.pointerId); } catch (_) {}
+    const ud = h.object.userData.handle;
+    const axis = ud.kind === 'plane' ? ud.p.axis.clone() : E[ud.i].clone();
+    const start = ud.kind === 'plane' ? ud.p.pos : (ud.side === 'min' ? box.min : box.max).getComponent(ud.i);
+    drag = { ud, axis, start, origin: h.point.clone(), moved: false };
+    setHot(h.object); canvas.style.cursor = 'grabbing';
+  }
+});
+canvas.addEventListener('pointermove', ev => {
+  if (drag) {
+    setRay(ev); const s = closestOnAxis(drag.origin, drag.axis, ray.ray); if (s == null) return;
+    drag.moved = true;
+    const v = drag.start + s, ud = drag.ud;
+    if (ud.kind === 'plane') { const [lo, hi] = axisRange(ud.p.axis); ud.p.pos = Math.min(hi, Math.max(lo, v)); syncPlaneRow(ud.p); }
+    else { const [lo, hi] = axisRange(E[ud.i]); const gap = (hi - lo) * 0.005;
+      if (ud.side === 'min') box.min.setComponent(ud.i, Math.min(Math.max(v, lo), box.max.getComponent(ud.i) - gap));
+      else box.max.setComponent(ud.i, Math.max(Math.min(v, hi), box.min.getComponent(ud.i) + gap));
+      boxUI[ud.i].update(); }
+    updateClip(); return;
+  }
+  if (!ev.buttons && ev.pointerType === 'mouse') { const h = pickHandle(ev); setHot(h ? h.object : null); }
+});
+function endPointer(ev) {
+  if (drag) { drag = null; controls.enabled = true; try { canvas.releasePointerCapture(ev.pointerId); } catch (_) {} setHot(null); down = null; return; }
+  if (!down || ev.type !== 'pointerup' || down.b !== 0) { down = null; return; }
+  const moved = Math.hypot(ev.clientX - down.x, ev.clientY - down.y); down = null;
+  if (moved > 5 || !model) return;
+  const h = pickModel(ev);
+  if (h) { const p = h.point.clone().add(model.offset); $('coord').textContent = `${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}${U() ? ' ' + U() : ''}`; }
+  if (scissors) { if (h) { addPlaneFromHit(h); setScissors(false); } return; }
+  select(h ? h.object.userData.el : null);
+}
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+canvas.addEventListener('dblclick', ev => { const h = pickModel(ev); if (h) fit(null, false, elBox(h.object.userData.el)); });
+
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.12; controls.screenSpacePanning = true; controls.rotateSpeed = 0.8;
+controls.addEventListener('change', redraw);
+
+// ---------- camera ----------
+let tween = null;
+function fit(dir, instant, bb) {
+  let b = bb;
+  if (!b) { b = new THREE.Box3(); visibleMeshes().forEach(m => b.union(m.geometry.boundingBox)); if (box.on) b.intersect(new THREE.Box3(box.min, box.max)); }
+  if (b.isEmpty()) b = model ? model.bbox.clone() : new THREE.Box3(new V3(-1, -1, -1), new V3(1, 1, 1));
+  const c = b.getCenter(new V3()), r = Math.max(b.getSize(new V3()).length() / 2, 1e-3);
+  const d = (dir || camera.position.clone().sub(controls.target)).clone().normalize();
+  const vf = THREE.MathUtils.degToRad(camera.fov) / 2, hf = Math.atan(Math.tan(vf) * camera.aspect);
+  const dist = r / Math.sin(Math.min(vf, hf)) * 1.04;
+  const mr = model ? model.bbox.getSize(new V3()).length() / 2 : r;
+  camera.near = Math.max(mr, r) / 800; camera.far = Math.max(mr, r) * 60 + dist; camera.updateProjectionMatrix();
+  controls.maxDistance = Math.max(mr, r) * 30;
+  const to = { p: c.clone().addScaledVector(d, dist), t: c };
+  if (instant || reduceMotion) { camera.position.copy(to.p); controls.target.copy(to.t); controls.update(); redraw(); return; }
+  tween = { p0: camera.position.clone(), t0: controls.target.clone(), p1: to.p, t1: to.t, s: performance.now(), d: 420 };
+}
+const VIEWS = { top: [0, -0.002, 1], front: [0, -1, 0.002], right: [1, 0, 0.002], iso: [1, -1.25, 0.9] };
+function setView(n) { if (n === 'fit') return fit(); fit(new V3(...VIEWS[n]).normalize()); }
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+
+// ---------- toolbar ----------
+function setScissors(on) {
+  scissors = on;
+  ['scissorBtn', 'scissorBtn2'].forEach(id => $(id).setAttribute('aria-pressed', on));
+  const h = $('hint'); h.classList.toggle('cutting', on);
+  h.textContent = on ? 'Scissors: click any surface to cut through it · Esc to cancel' : 'Drag to orbit · right-drag to pan · scroll to zoom · click to select';
+  canvas.style.cursor = on ? 'crosshair' : '';
+}
+$('scissorBtn').addEventListener('click', () => setScissors(!scissors));
+$('scissorBtn2').addEventListener('click', () => setScissors(!scissors));
+$('edgesBtn').addEventListener('click', () => {
+  edgesOn = !edgesOn; $('edgesBtn').setAttribute('aria-pressed', edgesOn);
+  if (edgesOn && model && model.tris > 400000 && !modelRoot.children.every(m => m.userData.edges)) { showLoad('Finding feature edges…', 0.5); setTimeout(() => { buildEdges(); hideLoad(); }, 30); }
+  else buildEdges();
+});
+$('fileIn').addEventListener('change', e => { if (e.target.files.length) openFiles(e.target.files); e.target.value = ''; });
+const narrow = matchMedia('(max-width: 900px)');
+function setPanel(side, on) {
+  const p = $(side === 'l' ? 'leftPanel' : 'rightPanel');
+  p.hidden = !on; $(side === 'l' ? 'tgLeft' : 'tgRight').setAttribute('aria-pressed', on);
+  if (on && narrow.matches) setPanel(side === 'l' ? 'r' : 'l', false);
+  $('work').classList.toggle('no-left', $('leftPanel').hidden); $('work').classList.toggle('no-right', $('rightPanel').hidden);
+}
+$('tgLeft').addEventListener('click', () => setPanel('l', $('leftPanel').hidden));
+$('tgRight').addEventListener('click', () => setPanel('r', $('rightPanel').hidden));
+if (narrow.matches) { setPanel('l', false); setPanel('r', false); }
+
+window.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,select,textarea')) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === 'f') fit();
+  else if (k === 'c') setScissors(!scissors);
+  else if (k === 'b') setBox(!box.on);
+  else if (k === 'h') hideSelected();
+  else if (k === 'i') isolateSelected();
+  else if (k === 'escape') { if (scissors) setScissors(false); else select(null); }
+  else return;
+  e.preventDefault();
+});
+
+// drag & drop
+let dragDepth = 0;
+window.addEventListener('dragenter', e => { if ([...(e.dataTransfer.types || [])].includes('Files')) { dragDepth++; $('dropOv').hidden = false; } });
+window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) $('dropOv').hidden = true; });
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; $('dropOv').hidden = true; if (e.dataTransfer.files.length) openFiles(e.dataTransfer.files); });
+
+// ---------- theme ----------
+function applyTheme() {
+  const acc = new THREE.Color(cssVar('--accent') || '#c4432a');
+  capU.uCut.value.copy(acc); [gizFace, gizFill, gizFillHot, gizLine, boxKnob].forEach(m => m.color.copy(acc)); boxKnobHot.color.copy(acc).lerp(new THREE.Color(0xffffff), 0.35);
+  edgeMat.color.set(cssVar('--ink') || '#162027');
+  selColor.set(cssVar('--sel') || '#2b78d0');
+  selCache.forEach(m => m.dispose()); selCache.clear();
+  if (selected) { const s = selected; select(null); select(s); }
+  redraw();
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+applyTheme();
+
+// ---------- render loop ----------
+const axesCtx = $('axes').getContext('2d');
+function drawAxes() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), cv = $('axes');
+  if (cv.width !== 72 * dpr) { cv.width = cv.height = 72 * dpr; }
+  const c = axesCtx; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, 72, 72);
+  const cols = ['#D0533D', '#3E9A55', '#3C7FD0'], ink = cssVar('--ink');
+  const ax = E.map((v, i) => { const w = v.clone().applyQuaternion(camera.quaternion.clone().invert()); return { i, x: 36 + w.x * 24, y: 36 - w.y * 24, z: w.z }; }).sort((a, b) => a.z - b.z);
+  c.lineWidth = 2; c.font = '600 10px "IBM Plex Mono", monospace'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  for (const a of ax) {
+    c.strokeStyle = cols[a.i]; c.beginPath(); c.moveTo(36, 36); c.lineTo(a.x, a.y); c.stroke();
+    c.fillStyle = cols[a.i]; c.beginPath(); c.arc(a.x, a.y, 7, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#fff'; c.fillText(AX[a.i], a.x, a.y + 0.5);
+  }
+  c.fillStyle = ink; c.beginPath(); c.arc(36, 36, 2, 0, Math.PI * 2); c.fill();
+}
+function resize() {
+  const w = vp.clientWidth, h = vp.clientHeight; if (!w || !h) return;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); redraw();
+}
+new ResizeObserver(resize).observe(vp);
+const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (tween) {
+    const t = Math.min(1, (now - tween.s) / tween.d), k = ease(t);
+    camera.position.lerpVectors(tween.p0, tween.p1, k); controls.target.lerpVectors(tween.t0, tween.t1, k);
+    if (t >= 1) tween = null; dirty = true;
+  }
+  if (controls.update()) dirty = true;
+  if (!dirty) return;
+  dirty = false;
+  renderer.render(scene, camera);
+  drawAxes();
+}
+resize();
+requestAnimationFrame(frame);
+
+// ---------- sample ----------
+(async () => {
+  const txt = $('sample-ifc').textContent.trim();
+  const f = new File([txt], 'sample-pavilion.ifc', { type: 'text/plain' });
+  await openFiles([f]);
+  const pav = model;
+  if (pav && pav === model) {
+    const p = addPlane(E[1], 3.5 - model.offset.y, 'Plane Y', 'Y');
+    if (p) { p.flip = true; updateClip(); renderPlanes(); }
+    setStatus('Sample model with one section through the middle · open your own .ifc or .stl, or drop it onto the window');
+  }
+})();
+})();
+
+</script>
+</body>
+</html>
